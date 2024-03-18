@@ -1,10 +1,18 @@
 # Documentation
 ---
+
+### CategoricalClassification.dataset_info:
+```python
+print(CategoricalClassification.dataset_info)
+```
+Stores a formatted string of operations made. Function _CategoricalClassification.generate\_data_ resets its contents. Each subsequent function call adds information to it.
+---
+
 ### CategoricalClassification.generate_data
 ```python
 CategoricalClassification.generate_data(n_features, n_samples, cardinality=5, ensure_rep=False, seed=42)
 ```
-Generates dataset of shape (n_samples, n_features), based on given parameters.
+Generates dataset of shape **_(n_samples, n_features)_**, based on given parameters.
 
 - **n\_features:** _int_
   The number of features in a generated dataset.
@@ -26,3 +34,105 @@ Generates dataset of shape (n_samples, n_features), based on given parameters.
   Controls **_numpy.random.seed_**               
 
 **Returns**: a **_numpy.ndarray_** dataset with **n\_features** features and **n\_samples** samples.
+---
+
+### CategoricalClassification.\_generate\_feature
+```python
+CategoricalClassification._generate_feature(v, size, ensure_rep, p)
+```
+Generates feature array of length **_size_**. Called by _CategoricalClassification.generate\_data_, by utilizing _numpy.random.choice_. If no probabilites array is given, the value density of the generated feature array will be roughly normal, with a randomly chosen peak. The peak will be chosen from the value array.
+
+- **v**: _int_ or _list_:
+  Range of values in feature array. If _int_ the function generates a value array in range _\[0, v\]_.
+- **size**: _int_
+  Length of generated feature array.
+- **ensure_rep**: _bool_, default=False
+  Control flag. If **_True_**, all possible values **will** appear in the feature array.
+- **p**: _list_ or _numpy.ndarray_, default=None
+  Array of frequencies or probabilities. Must be of length _v_ or equal to the length of _v_.
+
+**Returns:** a **_numpy.ndarray_** feature array. 
+___
+
+### CategoricalClassification.generate\_combinations
+```python
+CategoricalClassification.generate_combinations(X, feature_indices, combination_function, combination_type)
+```
+Generates and adds a new column to given dataset **X**. The column is the result of a combination of features selected with **feature\_indices**. Combinations can be linear, nonlinear, or custom defined functions.
+
+- **X**: _list_ or _numpy.ndarray_:
+  Dataset to perform the combinations on.
+- **feature_indices**: _list_ or _numpy.ndarray_:
+  List of feature (column) indices to be combined.
+- **combination\_function**: _function_, default=None:
+  Custom or user-defined combination function. The function parameter **must** be a _list_ or _numpy.ndarray_ of features to be combined. The function **must** return a _list_ or _numpy.ndarray_ column or columns, to be added to given dataset _X_ using _numpy.column\_stack_.
+- **combination\_type**: _str_ either _linear_ or _nonlinear_, default='linear':
+  Selects which built-in combination type is used.
+  - If _'linear'_, the combination is a sum of selected features.
+  - If _'nonlinear'_, the combination is the sine value of the sum of selected features.
+
+**Returns:** a **_numpy.ndarray_** dataset X with added feature combinations.
+---
+
+### CategoricalClassification.generate\_correlated
+```python
+CategoricalClassification.generate_correlated(X, feature_indices, r)
+```
+Generates and adds new columns to given dataset **X**, correlated to the selected features, by a Pearson correlation coefficient of **r**. For vectors with mean 0, their correlation equals the cosine of their angle.  
+
+- **X**: _list_ or _numpy.ndarray_:
+  Dataset to perform the combinations on.
+- **feature_indices**: _int_ or _list_ or _numpy.ndarray_:
+  Index of feature (column) or list of feature (column) indices to generate correlated features to.
+- **r**: _float_, default=0.8:
+  Desired correlation coefficient.
+
+**Returns:** a **_numpy.ndarray_** dataset X with added correlated features.
+---
+
+### CategoricalClassification.generate\_duplicates
+```python
+CategoricalClassification.generate_duplicates(X, feature_indices)
+```
+
+Duplicates selected feature (column) indices, and adds the duplicated columns to the given dataset **X**.
+
+- **X**: _list_ or _numpy.ndarray_:
+  Dataset to perform the combinations on.
+- **feature_indices**: _int_ or _list_ or _numpy.ndarray_:
+  Index of feature (column) or list of feature (column) indices to duplicate.
+
+**Returns:** a **_numpy.ndarray_** dataset X with added duplicated features.
+---
+### CategoricalClassification.generate\_linear\_labels and CategoricalClassification.generate\_nonlinear\_labels.
+_Duplicate functions, will be reworked and combined into one._
+```python
+CategoricalClassification.generate_nonlinear_labels(X, n, p, k, decision_function)
+```
+
+Generates a vector of labels. Labels are (currently) generated as either a linear, nonlinear, or custom defined function. It generates classes using a decision boundary generated by the linear, nonlinear, or custom defined function.
+
+- **X**: _list_ or _numpy.ndarray_:
+  Dataset to generate labels for.
+- **n**: _int_, default=2:
+  Number of classes.
+- **p**: _float_ or _list_, default=0.5:
+  Class distribution.
+- **k**: _int_ or _float_, default=2:
+  Constant to be used in the linear or nonlinear combination used to set class values.
+- **decision_function**: _function_, default: None
+  Custom defined function to use for setting class values. **Must** accept dataset X as input and return a _list_ or _numpy.ndarray_ decision boundary.
+
+ **Returns**: _numpy.ndarray_ y of class labels.
+---
+
+### CategoricalCLassification.print\_dataset
+```python
+CategoricalClassification.print_dataset(X, y)
+```
+Prints given dataset in a readable format.
+
+- **X**: _list_ or _numpy.ndarray_:
+  Dataset to print.
+- **y**: _list_ or _numpy.ndarray_:
+  Class labels corresponding to samples in given dataset.
