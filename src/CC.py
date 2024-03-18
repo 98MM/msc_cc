@@ -106,7 +106,8 @@ class CategoricalClassification:
         if p is None:
             v_shift = v - v[np.random.randint(len(v))]
             p = norm.pdf(v_shift, scale=3)
-            p = p / p.sum()
+        
+        p = p / p.sum()
 
         if ensure_rep and len(v) < size:
             sampled_values = np.random.choice(v, size=(size - len(v)), p=p)
