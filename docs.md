@@ -1,11 +1,12 @@
 # Documentation
 ---
 
-### CategoricalClassification.dataset_info:
+### CategoricalClassification.dataset_info
 ```python
 print(CategoricalClassification.dataset_info)
 ```
 Stores a formatted string of operations made. Function _CategoricalClassification.generate\_data_ resets its contents. Each subsequent function call adds information to it.
+
 ---
 
 ### CategoricalClassification.generate_data
