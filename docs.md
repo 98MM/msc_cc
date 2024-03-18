@@ -108,6 +108,7 @@ Duplicates selected feature (column) indices, and adds the duplicated columns to
   Index of feature (column) or list of feature (column) indices to duplicate.
 
 **Returns:** a **_numpy.ndarray_** dataset X with added duplicated features.
+
 ---
 ### CategoricalClassification.generate\_linear\_labels and CategoricalClassification.generate\_nonlinear\_labels.
 _Duplicate functions, will be reworked and combined into one._
