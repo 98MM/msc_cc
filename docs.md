@@ -35,6 +35,7 @@ Generates dataset of shape **_(n_samples, n_features)_**, based on given paramet
   Controls **_numpy.random.seed_**               
 
 **Returns**: a **_numpy.ndarray_** dataset with **n\_features** features and **n\_samples** samples.
+
 ---
 
 ### CategoricalClassification.\_generate\_feature
@@ -53,6 +54,7 @@ Generates feature array of length **_size_**. Called by _CategoricalClassificati
   Array of frequencies or probabilities. Must be of length _v_ or equal to the length of _v_.
 
 **Returns:** a **_numpy.ndarray_** feature array. 
+
 ___
 
 ### CategoricalClassification.generate\_combinations
@@ -73,6 +75,7 @@ Generates and adds a new column to given dataset **X**. The column is the result
   - If _'nonlinear'_, the combination is the sine value of the sum of selected features.
 
 **Returns:** a **_numpy.ndarray_** dataset X with added feature combinations.
+
 ---
 
 ### CategoricalClassification.generate\_correlated
@@ -89,6 +92,7 @@ Generates and adds new columns to given dataset **X**, correlated to the selecte
   Desired correlation coefficient.
 
 **Returns:** a **_numpy.ndarray_** dataset X with added correlated features.
+
 ---
 
 ### CategoricalClassification.generate\_duplicates
@@ -125,6 +129,7 @@ Generates a vector of labels. Labels are (currently) generated as either a linea
   Custom defined function to use for setting class values. **Must** accept dataset X as input and return a _list_ or _numpy.ndarray_ decision boundary.
 
  **Returns**: _numpy.ndarray_ y of class labels.
+ 
 ---
 
 ### CategoricalCLassification.print\_dataset
