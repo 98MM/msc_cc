@@ -20,6 +20,8 @@ Generates dataset of shape (n_samples, n_features), based on given parameters.
       - **(_int_ or _list_, _list_)**: the first element represents the index or list of indexes of features. The second element offers two options:
         - **_list_**:  a list of values to be used in the feature or features,
         - **\[_list_, _list_\]**: where the first _list_ element represents a set of values the feature or features posses, the second the frequencies or probabilities of individual features.
+- **ensure_rep:** _bool_, default=False:
+  Control flag. If **_True_**, all possible values **will** appear in the feature.
 - **seed**: _int_, default=42.
   Controls **_numpy.random.seed_**               
 
