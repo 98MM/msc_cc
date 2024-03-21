@@ -313,6 +313,59 @@ class CategoricalClassification:
 
         return y
 
+    def generate_labels(self, X, n=2, p=0.5, k=2, decision_function=None, class_relation='linear'):
+        """
+        Generates labels for dataset X
+        :param X: dataset
+        :param n: number of class labels
+        :param p: class distribution
+        :param k: constant
+        :param decision_function: optional user-defined decision function
+        :class_relation: string, either 'linear' or 'nonlinear'
+        :return: array of labels, corresponding to dataset X
+        """
+
+        n_samples, n_features = X.shape
+        d = {'classn': n, 'nfeatures': n_features}
+
+        if decision_function is None:
+            if class_relation == 'linear':
+                decision_function = lambda x: np.sum(2 * x + 3, axis=1)
+                d['type'] = 'linear, with constant ' + str(k)
+            elif class_relation == 'nonlinear':
+                decision_function = lambda x: np.sum(k * np.sin(x) + k * np.cos(x), axis=1)
+                d['type'] = 'nonlinear, with constant ' + str(k)
+        else:
+            d['type'] = 'user defined'
+
+        if n > 2:
+            if type(p) != list:
+                p = 1 / n
+                percentiles = [p * 100]
+                for i in range(1, n - 1):
+                    percentiles.append(percentiles[i - 1] + (p * 100))
+
+                decision_boundary = decision_function(X)
+                p_points = np.percentile(decision_boundary, percentiles)
+
+                y = np.zeros_like(decision_boundary, dtype=int)
+                for p_point in p_points:
+                    y += (decision_boundary > p_point)
+
+        else:
+            decision_boundary = decision_function(X)
+            p_point = np.percentile(decision_boundary, p * 100)
+            y = np.where(decision_boundary > p_point, 1, 0)
+
+        s = '''
+                Sample-label relationship is {type}, with {classn} target labels.\n\
+                Total number of features generated: {nfeatures}\
+            '''.format(**d)
+
+        self.dataset_info += s
+
+        return y
+
     def print_dataset(self, X, y):
         """
         Prints given dataset
