@@ -131,7 +131,7 @@ Generates a vector of labels. Labels are (currently) generated as either a linea
 - **class_relation**: _str_, either 'linear' or 'nonlinear', default='linear':
   Sets relationship type between class label and sample, using a linear or nonlinear combination of features in X.
 
- **Returns**: _numpy.ndarray_ y of class labels.
+ **Returns**: **_numpy.ndarray_** y of class labels.
  
 ---
 
