@@ -111,7 +111,6 @@ Duplicates selected feature (column) indices, and adds the duplicated columns to
 
 ---
 ### CategoricalClassification.generate\_labels
-_Duplicate functions, will be reworked and combined into one._
 ```python
 CategoricalClassification.generate_nonlinear_labels(X, n=2, p=0.5, k=2, decision_function=None, class_relation='linear')
 ```
@@ -134,8 +133,28 @@ Generates a vector of labels. Labels are (currently) generated as either a linea
  **Returns**: **_numpy.ndarray_** y of class labels.
  
 ---
+### CategoricalClassification.generate\_noise
+```python
+CategoricalClassification.generate_noise( X, y, p=0.2, type="categorical", missing_val=float('-inf'))
+```
 
-### CategoricalCLassification.print\_dataset
+Generates categorical noise or simulates missing data on a given dataset. 
+
+- **X**: _list_ or _numpy.ndarray_:
+  Dataset to generate noise for.
+- **y**: _list_ or _numpy.ndarray_:
+  Labels of samples in dataset X. **Required** for generating categorical noise.
+- **p**: _float_, p <=1.0, default=0.2:
+  Amount of noise to generate.
+- **type**: _str_, either _"categorical"_ or _"missing"_, default="categorical":
+  Type of noise to generate.
+- **missing_val**: default=float('-inf'):
+  Value to simulate missing values with. Non-numerical values may cause issues with algorithms unequipped to handle them.
+
+**Returns**: **_numpy.ndarray_** X with added noise.
+
+---
+### CategoricalClassification.print\_dataset
 ```python
 CategoricalClassification.print_dataset(X, y)
 ```
