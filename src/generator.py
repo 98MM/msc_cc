@@ -1,7 +1,8 @@
 import numpy as np
 from scipy.linalg import qr
 from scipy.stats import norm
-
+from sklearn.cluster import KMeans
+from sklearn.utils import resample
 class CategoricalClassification:
 
     def __init__(self):
@@ -102,8 +103,6 @@ class CategoricalClassification:
         if not isinstance(v, (list, np.ndarray)):
             v = np.arange(0, v, 1)
 
-
-
         if p is None:
             v_shift = v - v[np.random.randint(len(v))]
             p = norm.pdf(v_shift, scale=3)
@@ -152,6 +151,32 @@ class CategoricalClassification:
 
         return np.column_stack((X, combination_result))
 
+    def _xor(self, a, b):
+        """
+        Performs bitwise XOR operation on two integer arrays
+        :param a: array
+        :param b: array
+        :return: bitwise XOR result
+        """
+        return np.bitwise_xor(a, b)
+
+    def _and(self, a, b):
+        """
+        Performs bitwise AND operation on two integer arrays
+        :param a: array
+        :param b: array
+        :return: bitwise AND result
+        """
+        return np.bitwise_and(a, b)
+
+    def _or(self, a, b):
+        """
+        Performs bitwise OR operation on two integer arrays
+        :param a: array
+        :param b: array
+        :return: bitwise OR result
+        """
+        return np.bitwise_or(a, b)
     def generate_correlated(self, X, feature_indices, r=0.8):
 
         """
@@ -219,7 +244,7 @@ class CategoricalClassification:
 
         return np.column_stack((X, selected_features))
 
-    def generate_labels(self, X, n=2, p=0.5, k=2, decision_function=None, class_relation='linear'):
+    def generate_labels(self, X, n=2, p=0.5, k=2, decision_function=None, class_relation='linear', balance=True):
         """
         Generates labels for dataset X
         :param X: dataset
@@ -227,12 +252,20 @@ class CategoricalClassification:
         :param p: class distribution
         :param k: constant
         :param decision_function: optional user-defined decision function
-        :class_relation: string, either 'linear' or 'nonlinear'
+        :param class_relation: string, either 'linear', 'nonlinear', or 'cluster'
+        :param balance: boolean, whether to balance clustering class labels
         :return: array of labels, corresponding to dataset X
         """
 
+        if isinstance(p, (list, np.ndarray)):
+            if sum(p) > 1: raise ValueError('sum of values in must be less than 1.0')
+            if len(p) > n: raise ValueError('length of p must equal n')
+
+        if p > 1: raise ValueError('p must be less than 1.0')
+
         n_samples, n_features = X.shape
         d = {'classn': n, 'nfeatures': n_features}
+
 
         if decision_function is None:
             if class_relation == 'linear':
@@ -241,28 +274,53 @@ class CategoricalClassification:
             elif class_relation == 'nonlinear':
                 decision_function = lambda x: np.sum(k * np.sin(x) + k * np.cos(x), axis=1)
                 d['type'] = 'nonlinear, with constant ' + str(k)
+            elif class_relation == 'cluster':
+                decision_function = None
+                d['type'] = 'cluster, balance: ' + str(balance)
         else:
             d['type'] = 'user defined'
 
-        if n > 2:
-            if type(p) != list:
-                p = 1 / n
-                percentiles = [p * 100]
-                for i in range(1, n - 1):
-                    percentiles.append(percentiles[i - 1] + (p * 100))
+        y = []
+        if decision_function is not None:
+            if n > 2:
+                if type(p) != list:
+                    p = 1 / n
+                    percentiles = [p * 100]
+                    for i in range(1, n - 1):
+                        percentiles.append(percentiles[i - 1] + (p * 100))
 
+                    decision_boundary = decision_function(X)
+                    p_points = np.percentile(decision_boundary, percentiles)
+
+                    y = np.zeros_like(decision_boundary, dtype=int)
+                    for p_point in p_points:
+                        y += (decision_boundary > p_point)
+                else:
+                    decision_boundary = decision_function(X)
+                    percentiles = [x * 100 for x in p]
+
+                    for i in range(1, len(percentiles) - 1):
+                        percentiles[i] += percentiles[i - 1]
+
+                    percentiles.insert(0, 0)
+                    percentiles.pop()
+                    print(percentiles)
+
+                    p_points = np.percentile(decision_boundary, percentiles)
+                    print(p_points)
+
+                    y = np.zeros_like(decision_boundary, dtype=int)
+                    for i in range(1, n):
+                        p_point = p_points[i]
+                        for j in range(len(decision_boundary)):
+                            if decision_boundary[j] > p_point:
+                                y[j] += 1
+            else:
                 decision_boundary = decision_function(X)
-                p_points = np.percentile(decision_boundary, percentiles)
-
-                y = np.zeros_like(decision_boundary, dtype=int)
-                for p_point in p_points:
-                    y += (decision_boundary > p_point)
-
+                p_point = np.percentile(decision_boundary, p * 100)
+                y = np.where(decision_boundary > p_point, 1, 0)
         else:
-            decision_boundary = decision_function(X)
-            p_point = np.percentile(decision_boundary, p * 100)
-            y = np.where(decision_boundary > p_point, 1, 0)
-
+            y = self._cluster_data(X, n, p=p, balance=balance)
         s = '''
                 Sample-label relationship is {type}, with {classn} target labels.\n\
                 Total number of features generated: {nfeatures}\
@@ -271,6 +329,92 @@ class CategoricalClassification:
         self.dataset_info += s
 
         return y
+
+    def _cluster_data(self, X, n, p=1.0, balance=False):
+        """
+        Cluster data using kmeans
+        :param X: dataset
+        :param n: number of clusters
+        :param p: class distribution
+        :param balance: balance the clusters according to p
+        :return: array of labels, corresponding to dataset X
+        """
+
+        kmeans = KMeans(n_clusters=n)
+
+        kmeans.fit(X)
+
+        cluster_labels = kmeans.labels_
+
+        if not isinstance(p, (list, np.ndarray)):  # Fully balanced clusters
+            samples_per_cluster = [len(X) // n] * n
+        else:
+            samples = len(X)
+            samples_per_cluster = []
+            if not isinstance(p, (list, np.ndarray)):
+                samples_per_cluster.append(int(samples * p) // n)
+                samples_per_cluster.append(int(samples * (1 - p)) // n)
+            else:
+                if len(p) == n:
+                    for val in p:
+                        samples_per_cluster.append(int(samples * val))
+                else:
+                    raise Exception("Length of balance parameter must equal number of clusters.")
+
+        # Adjust cluster sizes
+        if balance:
+            adjustments = []
+            overflow_samples = []
+            overflow_indices = []
+            for i in range(n):
+                cluster_size = np.sum(cluster_labels == i)
+
+                adjustment = samples_per_cluster[i] - cluster_size
+                adjustments.append(adjustment)
+
+                if adjustment < 0:  # Cluter is too large
+
+                    centroid = kmeans.cluster_centers_[i]
+                    dataset_indices = np.where(cluster_labels == i)[0]  # Indices of samples in dataset
+                    cluster_samples = np.copy(X[dataset_indices])
+
+                    distances = np.linalg.norm(cluster_samples - centroid,
+                                               axis=1)  # Distances of cluster samples to cluster centroid
+                    cluster_sample_indices = np.argsort(distances)
+                    dataset_indices_sorted = dataset_indices[
+                        cluster_sample_indices]  # Indices of samples sorted by sample distance to cluster centroid
+
+                    overflow_sample_indices = cluster_sample_indices[samples_per_cluster[i]:]  # Overflow samples
+                    dataset_indices_sorted = dataset_indices_sorted[
+                                             samples_per_cluster[i]:]  # Dataset indices of overflow samples
+
+                    for i in range(len(overflow_sample_indices)):
+                        overflow_samples.append(cluster_samples[overflow_sample_indices[i]])
+                        overflow_indices.append(dataset_indices_sorted[i])
+
+            overflow_samples = np.array(overflow_samples)
+            overflow_indices = np.array(overflow_indices)
+
+            # Making adjustments
+            for i in range(n):
+
+                if adjustments[i] > 0:
+                    centroid = kmeans.cluster_centers_[i]
+                    distances = np.linalg.norm(overflow_samples - centroid, axis=1)
+
+                    closest_sample_indices = np.argsort(distances)
+
+                    overflow_indices_sorted = overflow_indices[closest_sample_indices]
+
+                    sample_indices_slice = closest_sample_indices[:adjustments[i]]
+                    overflow_indices_slice = overflow_indices_sorted[:adjustments[i]]
+
+                    cluster_labels[overflow_indices_slice] = i
+
+                    overflow_samples = np.delete(overflow_samples, sample_indices_slice, axis=0)
+                    overflow_indices = np.delete(overflow_indices, sample_indices_slice, axis=0)
+
+        return cluster_labels
 
     def generate_noise(self, X, y, p=0.2, type="categorical", missing_val=float('-inf')):
 
@@ -345,7 +489,7 @@ class CategoricalClassification:
             Xn_T = X_noise.T
             n = Xn_T.shape[1]
             n_missing = int(n * p)
-            print("n to delete:", n_missing)
+            #print("n to delete:", n_missing)
 
             for feature in Xn_T:
                 ixs = np.random.choice(n, n_missing, replace=False)
@@ -354,6 +498,47 @@ class CategoricalClassification:
                     feature[ix] = missing_val
 
             return Xn_T.T
+
+    def downsample_dataset(self, X, y, N=None, seed=42, reshuffle=False):
+
+        """
+        Downsamples dataset X according to N or the number of samples in minority class
+        :param X: Dataset to downsample
+        :param y: Labels corresponding to X
+        :param N: Optional number of samples to downsample to
+        :param seed: Seed for random state of resample function
+        :param reshuffle: Reshuffle the dataset after downsampling
+        :return: X and y after downsampling
+        """
+
+        values, counts = np.unique(y, return_counts=True)
+        if N is None:
+            N = min(counts)
+
+        if N > min(counts):
+            raise ValueError("N must be equal to or less than the number of samples in minority class")
+
+        X_arrays_list = []
+        y_downsampled = []
+        for label in values:
+            X_label = [X[i] for i in range(len(y)) if y[i] == label]
+            X_label_downsample = resample(X_label,
+                                          replace=True,
+                                          n_samples=N,
+                                          random_state=seed)
+            X_arrays_list.append(X_label_downsample)
+            ys = [label] * N
+            y_downsampled = np.concatenate((y_downsampled, ys), axis=0)
+
+        X_downsampled = np.concatenate(X_arrays_list, axis=0)
+
+        if reshuffle:
+            indices = np.arange(len(X_downsampled))
+            np.random.shuffle(indices)
+            X_downsampled = X_downsampled[indices]
+            y_downsampled = y_downsampled[indices]
+
+        return X_downsampled, y_downsampled
 
     def print_dataset(self, X, y):
         """
