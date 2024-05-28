@@ -244,7 +244,7 @@ class CategoricalClassification:
 
         return np.column_stack((X, selected_features))
 
-    def generate_labels(self, X, n=2, p=0.5, k=2, decision_function=None, class_relation='linear', balance=True):
+    def generate_labels(self, X, n=2, p=0.5, k=2, decision_function=None, class_relation='linear', balance=False):
         """
         Generates labels for dataset X
         :param X: dataset
@@ -320,6 +320,10 @@ class CategoricalClassification:
                 p_point = np.percentile(decision_boundary, p * 100)
                 y = np.where(decision_boundary > p_point, 1, 0)
         else:
+            if p == 0.5:
+                p = 1.0
+            else:
+                p = [p, 1 - p]
             y = self._cluster_data(X, n, p=p, balance=balance)
         s = '''
                 Sample-label relationship is {type}, with {classn} target labels.\n\
@@ -505,10 +509,10 @@ class CategoricalClassification:
         Downsamples dataset X according to N or the number of samples in minority class
         :param X: Dataset to downsample
         :param y: Labels corresponding to X
-        :param N: Optional number of samples to downsample to
+        :param N: Optional number of samples per class to downsample to
         :param seed: Seed for random state of resample function
         :param reshuffle: Reshuffle the dataset after downsampling
-        :return: X and y after downsampling
+        :return: Balanced X and y after downsampling
         """
 
         values, counts = np.unique(y, return_counts=True)
