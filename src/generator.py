@@ -1,5 +1,4 @@
 import numpy as np
-from datasets import tqdm
 from scipy.linalg import qr
 from scipy.stats import norm
 from sklearn.cluster import KMeans
