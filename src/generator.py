@@ -1,4 +1,5 @@
 import numpy as np
+from datasets import tqdm
 from scipy.linalg import qr
 from scipy.stats import norm
 from sklearn.cluster import KMeans
@@ -605,10 +606,12 @@ class CategoricalClassification:
             X_downsampled = X_downsampled[indices]
             y_downsampled = y_downsampled[indices]
 
+        downsampled_shape = X_downsampled.shape
+
         self.dataset_info.update({
             'downsampling': {
                 'original_shape': original_shape,
-                'downsampled_shape': X_downsampled,
+                'downsampled_shape': downsampled_shape
             }
         })
 
@@ -633,3 +636,42 @@ class CategoricalClassification:
                     print(arr[i], end=', ')
             print("], Label: {}".format(y[n]))
             n += 1
+
+
+    def summarize(self):
+
+        print(f"Number of features: {self.dataset_info['general']['n_features']}")
+        print(f"Number of generated samples: {self.dataset_info['general']['n_samples']}")
+        if self.dataset_info['downsampling']:
+            print(f"Dataset downsampled from shape {self.dataset_info['downsampling']['original_shape']},to shape {self.dataset_info['downsampling']['downsampled_shape']}")
+        print(f"Number of classes: {self.dataset_info['labels']['n_class']}")
+        print(f"Class relation: {self.dataset_info['labels']['class_relation']}")
+
+
+        print('-------------------------------------')
+
+        if len(self.dataset_info['combinations']) > 0:
+            print("Combinations:")
+            for comb in self.dataset_info['combinations']:
+                print(f"Features {comb['feature_indices']} are in {comb['combination_type']} combination, result in {comb['combination_ix']}")
+            print('-------------------------------------')
+
+        if len(self.dataset_info['correlations']) > 0:
+            print("Correlations:")
+            for corr in self.dataset_info['correlations']:
+                print(f"Features {corr['feature_indices']} are correlated to {corr['correlated_indices']} with a factor of {corr['correlation_factor']}")
+            print('-------------------------------------')
+
+        if len(self.dataset_info['duplicates']) > 0:
+            print("Duplicates:")
+            for dup in self.dataset_info['duplicates']:
+                print(f"Features {dup['feature_indices']} are duplicated, duplicate indexes are {dup['duplicate_indices']}")
+            print('-------------------------------------')
+
+        if len(self.dataset_info['noise']) > 0:
+            print("Simulated noise:")
+            for noise in self.dataset_info['noise']:
+                print(f"Simulated {noise['type']} noise, amount of {noise['noise_amount']}")
+            print('-------------------------------------')
+
+        print("\nFor more information on dataset structure, print cc.dataset_info['general']['structure']")
