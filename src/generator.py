@@ -3,12 +3,29 @@ from scipy.linalg import qr
 from scipy.stats import norm
 from sklearn.cluster import KMeans
 from sklearn.utils import resample
+from typing import List, Union, Optional, Tuple
 class CategoricalClassification:
 
     def __init__(self):
-        self.dataset_info = ''
+        self.dataset_info = {
+            'general': {},
+            'combinations': [],
+            'correlations': [],
+            'duplicates': [],
+            'labels': [],
+            'noise': []
+        }
 
-    def generate_data(self, n_features: int, n_samples: int, cardinality=5, structure=None, ensure_rep: bool = False, seed: int = 42) -> np.ndarray:
+    def __repr__(self):
+        return f"CategoricalClassification(dataset_info={self.dataset_info})"
+
+    def generate_data(self,
+                      n_features: int,
+                      n_samples: int,
+                      cardinality: int = 5,
+                      structure: Optional = None,
+                      ensure_rep: bool = False,
+                      seed: int = 42) -> np.ndarray:
 
         """
         Generates dataset based on parameters
@@ -21,17 +38,16 @@ class CategoricalClassification:
         :return: X, 2D dataset
         """
 
-
-        d = {'n_features': n_features, 'ix': (n_features - 1), 'n_samples': n_samples, 'cardinality': cardinality,
-             'seed': seed}
-        s = '''\
-                Number of original features: {n_features}, at columns [0, ..., {ix}]\n\
-                Number of samples: {n_samples}\n\
-                Cardinality: {cardinality}\n\
-                Random seed: {seed}\
-            '''.format(**d)
-
-        self.dataset_info = s
+        self.dataset_info.update({
+            'general': {
+                'n_features': n_features,
+                'n_samples': n_samples,
+                'cardinality': cardinality,
+                'structure': structure,
+                'ensure_rep': ensure_rep,
+                'seed': seed
+            }
+        })
 
         np.random.seed(seed)
         X = np.empty([n_features, n_samples])
@@ -91,7 +107,11 @@ class CategoricalClassification:
 
         return X.T
 
-    def _generate_feature(self, v, size: int, ensure_rep: bool = False, p=None) -> np.ndarray:
+    def _generate_feature(self,
+                          v: Union[int, List[int], np.ndarray],
+                          size: int,
+                          ensure_rep: bool = False,
+                          p: Optional[Union[List[float], np.ndarray]] = None) -> np.ndarray:
         """
         Generates feature vector of length size. Default probability density distribution is approx. normal, centred around randomly picked value.
         :param v: either int for cardinality, or list of values
@@ -102,11 +122,15 @@ class CategoricalClassification:
         """
         if not isinstance(v, (list, np.ndarray)):
             v = np.arange(0, v, 1)
+        else:
+            v = np.array(v)
 
         if p is None:
             v_shift = v - v[np.random.randint(len(v))]
             p = norm.pdf(v_shift, scale=3)
-        
+        else:
+            p = np.array(p)
+
         p = p / p.sum()
 
         if ensure_rep and len(v) < size:
@@ -118,7 +142,11 @@ class CategoricalClassification:
         np.random.shuffle(sampled_values)
         return sampled_values
 
-    def generate_combinations(self, X, feature_indices, combination_function=None, combination_type='linear'):
+    def generate_combinations(self,
+                              X: np.ndarray,
+                              feature_indices: Union[List[int], np.ndarray],
+                              combination_function: Optional = None,
+                              combination_type: str ='linear') -> np.ndarray:
         """
         Generates linear, nonlinear, or custom combinations within feature vectors in given dataset X
         :param X: dataset
@@ -127,27 +155,27 @@ class CategoricalClassification:
         :param combination_type: string flag, either liner or nonlinear, defining combination type
         :return: X with added resultant feature
         """
-        d = {'ixs': feature_indices, 'combination_ix': len(X[0])}
+
 
         selected_features = X[:, feature_indices]
 
         if combination_function is None:
             if combination_type == 'linear':
                 combination_function = lambda x: np.sum(x, axis=1)
-                d['func'] = 'linear'
             elif combination_type == 'nonlinear':
                 combination_function = lambda x: np.sin(np.sum(x, axis=1))
-                d['func'] = 'nonlinear'
         else:
-            d['func'] = 'user defined'
+            combination_type = str(combination_type.__name__)
 
         combination_result = combination_function(selected_features)
 
-        s = '''
-                Columns {ixs} are {func} combinations, result in column {combination_ix}\
-            '''.format(**d)
+        combination_ix = len(X[0])
 
-        self.dataset_info += s
+        self.dataset_info['combinations'].append({
+            'feature_indices': feature_indices,
+            'combination_type': combination_type,
+            'combination_ix': combination_ix
+        })
 
         return np.column_stack((X, combination_result))
 
@@ -177,7 +205,10 @@ class CategoricalClassification:
         :return: bitwise OR result
         """
         return np.bitwise_or(a, b)
-    def generate_correlated(self, X, feature_indices, r=0.8):
+    def generate_correlated(self,
+                            X: np.ndarray,
+                            feature_indices: Union[List[int], np.ndarray],
+                            r: float = 0.8) -> np.ndarray:
 
         """
         Generates correlated features using the given feature indices. Correlation is based on cosine of angle between vectors with mean 0.
@@ -187,7 +218,13 @@ class CategoricalClassification:
         :return: X with generated correlated  features
         """
 
-        d = {'ixs': feature_indices, 'corr': r, 'f0': len(X[0]), 'fn': (len(X[0]) + len(feature_indices) - 1)}
+        if not isinstance(feature_indices, (list, np.ndarray)):
+            feature_indices = np.array([feature_indices])
+
+        if len(feature_indices) > 1:
+            correlated_ixs = np.arange(len(X[0]), (len(X[0]) + len(feature_indices)), 1)
+        else:
+            correlated_ixs = len(X[0])
 
         selected_features = X[:, feature_indices]
         transposed = np.transpose(selected_features)
@@ -195,10 +232,10 @@ class CategoricalClassification:
 
         for t in transposed:
             theta = np.arccos(r)
-            t_standard = (t - np.mean(t)) / np.std(t)
+            t_standard = (t - np.mean(t)) / (np.std(t) + 1e-10)
 
             rand = np.random.normal(0, 1, len(t_standard))
-            rand = (rand - np.mean(rand)) / np.std(rand)
+            rand = (rand - np.mean(rand)) / (np.std(rand) + 1e-10)
 
             M = np.column_stack((t_standard, rand))
             M_centred = (M - np.mean(M, axis=0))
@@ -216,35 +253,45 @@ class CategoricalClassification:
 
         correlated_features = np.transpose(correlated_features)
 
-        s = '''
-                Columns [{f0}, ..., {fn}] are correlated to {ixs} with a factor of {corr}\
-            '''.format(**d)
-
-        self.dataset_info += s
+        self.dataset_info['correlations'].append({
+            'feature_indices': feature_indices,
+            'correlated_indices': correlated_ixs,
+            'correlation_factor': r
+        })
 
         return np.column_stack((X, correlated_features))
 
-    def generate_duplicates(self, X, feature_indices):
+    def generate_duplicates(self,
+                            X: np.ndarray,
+                            feature_indices: Union[List[int], np.ndarray]) -> np.ndarray:
         """
         Generates duplicate features
         :param X: dataset
         :param feature_indices: indices of features to duplicate
         :return: dataset with duplicated features
         """
-        d = {'ixs': feature_indices, 'f0': len(X[0]), 'fn': (len(X[0]) + len(feature_indices) - 1)}
+        if not isinstance(feature_indices, (list, np.ndarray)):
+            feature_indices = np.array([feature_indices])
+
+        duplicated_ixs = np.arange(len(X[0]), (len(X[0]) + len(feature_indices) - 1), 1)
 
         selected_features = X[:, feature_indices]
 
-        s = '''
-                Columns [{f0}, ..., {fn}] are duplicates of {ixs}\
-            '''.format(**d)
-
-
-        self.dataset_info += s
+        self.dataset_info['duplicates'].append({
+            'feature_indices': feature_indices,
+            'duplicate_indices': duplicated_ixs
+        })
 
         return np.column_stack((X, selected_features))
 
-    def generate_labels(self, X, n=2, p=0.5, k=2, decision_function=None, class_relation='linear', balance=False):
+    def generate_labels(self,
+                        X: np.ndarray,
+                        n: int = 2,
+                        p: Union[float, list[float], np.ndarray] = 0.5,
+                        k: Union[int, float] = 2,
+                        decision_function: Optional = None,
+                        class_relation: str ='linear',
+                        balance: bool = False):
         """
         Generates labels for dataset X
         :param X: dataset
@@ -264,21 +311,16 @@ class CategoricalClassification:
         if p > 1: raise ValueError('p must be less than 1.0')
 
         n_samples, n_features = X.shape
-        d = {'classn': n, 'nfeatures': n_features}
-
 
         if decision_function is None:
             if class_relation == 'linear':
                 decision_function = lambda x: np.sum(2 * x + 3, axis=1)
-                d['type'] = 'linear, with constant ' + str(k)
             elif class_relation == 'nonlinear':
                 decision_function = lambda x: np.sum(k * np.sin(x) + k * np.cos(x), axis=1)
-                d['type'] = 'nonlinear, with constant ' + str(k)
             elif class_relation == 'cluster':
                 decision_function = None
-                d['type'] = 'cluster, balance: ' + str(balance)
         else:
-            d['type'] = 'user defined'
+            class_relation = str(decision_function.__name__)
 
         y = []
         if decision_function is not None:
@@ -325,16 +367,21 @@ class CategoricalClassification:
             else:
                 p = [p, 1 - p]
             y = self._cluster_data(X, n, p=p, balance=balance)
-        s = '''
-                Sample-label relationship is {type}, with {classn} target labels.\n\
-                Total number of features generated: {nfeatures}\
-            '''.format(**d)
 
-        self.dataset_info += s
+        self.dataset_info.update({
+            'labels': {
+                'class_relation': class_relation,
+                'n_class': n
+            }
+        })
 
         return y
 
-    def _cluster_data(self, X, n, p=1.0, balance=False):
+    def _cluster_data(self,
+                      X: np.ndarray,
+                      n: int,
+                      p: Optional[Union[float, List[float], np.ndarray]] = 1.0,
+                      balance: bool = False) -> np.ndarray:
         """
         Cluster data using kmeans
         :param X: dataset
@@ -418,9 +465,14 @@ class CategoricalClassification:
                     overflow_samples = np.delete(overflow_samples, sample_indices_slice, axis=0)
                     overflow_indices = np.delete(overflow_indices, sample_indices_slice, axis=0)
 
-        return cluster_labels
+        return np.array(cluster_labels)
 
-    def generate_noise(self, X, y, p=0.2, type="categorical", missing_val=float('-inf')):
+    def generate_noise(self,
+                       X: np.ndarray,
+                       y: Union[List[int], np.ndarray],
+                       p: float = 0.2,
+                       type: str = "categorical",
+                       missing_val: Union[str, int, float] = float('-inf')) -> np.ndarray:
 
         """
         Simulates noise on given dataset X
@@ -432,6 +484,10 @@ class CategoricalClassification:
         :return: X with noise applied
         """
 
+        self.dataset_info['noise'].append({
+            'type': type,
+            'amount': p
+        })
 
         if type == "categorical":
             label_values, label_count = np.unique(y, return_counts=True)
@@ -503,10 +559,15 @@ class CategoricalClassification:
 
             return Xn_T.T
 
-    def downsample_dataset(self, X, y, N=None, seed=42, reshuffle=False):
+    def downsample_dataset(self,
+                           X: np.array,
+                           y: Union[List[int], np.ndarray],
+                           N: Optional[Union[int, None]] = None,
+                           seed: int = 42,
+                           reshuffle: bool=False) -> Tuple[np.array, np.ndarray]:
 
         """
-        Downsamples dataset X according to N or the number of samples in minority class
+        Downsamples dataset X according to N or the number of samples in minority class, resulting in a balanced dataset.
         :param X: Dataset to downsample
         :param y: Labels corresponding to X
         :param N: Optional number of samples per class to downsample to
@@ -514,6 +575,8 @@ class CategoricalClassification:
         :param reshuffle: Reshuffle the dataset after downsampling
         :return: Balanced X and y after downsampling
         """
+
+        original_shape = X.shape
 
         values, counts = np.unique(y, return_counts=True)
         if N is None:
@@ -541,6 +604,13 @@ class CategoricalClassification:
             np.random.shuffle(indices)
             X_downsampled = X_downsampled[indices]
             y_downsampled = y_downsampled[indices]
+
+        self.dataset_info.update({
+            'downsampling': {
+                'original_shape': original_shape,
+                'downsampled_shape': X_downsampled,
+            }
+        })
 
         return X_downsampled, y_downsampled
 
