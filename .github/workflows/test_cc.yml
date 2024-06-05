@@ -29,5 +29,5 @@ jobs:
         pip install -U scikit-learn
         pip install typing
     - name: Test with pytest
-      run: python 98MM/msc_cc/src/tests.py
+      run: python ./src/tests.py
         
