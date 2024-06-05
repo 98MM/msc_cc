@@ -217,7 +217,7 @@ Generates categorical noise or simulates missing data on a given dataset.
 CategoricalClassification.downsample_dataset(X, y, N=None, seed=42, reshuffle=False):
 ```
 
-Downsamples given dataset according to N or the number of samples in minority class.
+Downsamples given dataset according to N or the number of samples in minority class, resulting in a balanced dataset.
 
 - **X**: _list_ or _numpy.ndarray_:
   Dataset to downsample.
@@ -244,3 +244,11 @@ Prints given dataset in a readable format.
   Dataset to print.
 - **y**: _list_ or _numpy.ndarray_:
   Class labels corresponding to samples in given dataset.
+
+---
+
+### CategoricalClassification.summarize
+```python
+CategoricalClassification.summarize()
+```
+Prints stored dataset information dictionary in a digestible manner.
