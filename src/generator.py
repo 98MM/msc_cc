@@ -66,6 +66,7 @@ class CategoricalClassification:
                 if not isinstance(data[0], (list, np.ndarray)):
                     feature_ix = data[0]
                     feature_cardinality = data[1]
+
                     if ix < feature_ix:
                         for i in range(ix, feature_ix):
                             x = self._generate_feature(cardinality, n_samples, ensure_rep=ensure_rep)
@@ -75,9 +76,13 @@ class CategoricalClassification:
                     if not isinstance(feature_cardinality, (list, np.ndarray)):
                         x = self._generate_feature(feature_cardinality, n_samples, ensure_rep=ensure_rep)
                     else:
-                        value_domain = feature_cardinality[0]
-                        value_frequencies = feature_cardinality[1]
-                        x = self._generate_feature(value_domain, n_samples, ensure_rep=ensure_rep, p=value_frequencies)
+                        if isinstance(feature_cardinality[0], (list, np.ndarray)):
+                            value_domain = feature_cardinality[0]
+                            value_frequencies = feature_cardinality[1]
+                            x = self._generate_feature(value_domain, n_samples, ensure_rep=ensure_rep, p=value_frequencies)
+                        else:
+                            value_domain = feature_cardinality
+                            x = self._generate_feature(value_domain, n_samples, ensure_rep=ensure_rep)
                     X[ix] = x
                     ix += 1
 
