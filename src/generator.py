@@ -170,7 +170,7 @@ class CategoricalClassification:
             elif combination_type == 'nonlinear':
                 combination_function = lambda x: np.sin(np.sum(x, axis=1))
         else:
-            combination_type = str(combination_type.__name__)
+            combination_type = str(combination_function.__name__)
 
         combination_result = combination_function(selected_features)
 
@@ -184,32 +184,55 @@ class CategoricalClassification:
 
         return np.column_stack((X, combination_result))
 
-    def _xor(self, a, b):
+    def _xor(self, arr):
         """
         Performs bitwise XOR operation on two integer arrays
         :param a: array
         :param b: array
         :return: bitwise XOR result
         """
-        return np.bitwise_xor(a, b)
+        arrT = arr.T
+        arrT = arrT.astype(int)
+        out = np.bitwise_xor(arrT[0], arrT[1])
+        if len(arrT) > 2:
+            for i in range(2, len(arrT)):
+                out = np.bitwise_xor(out, arrT[i])
 
-    def _and(self, a, b):
+        return out.T
+
+
+    def _and(self, arr):
         """
         Performs bitwise AND operation on two integer arrays
         :param a: array
         :param b: array
         :return: bitwise AND result
         """
-        return np.bitwise_and(a, b)
+        arrT = arr.T
+        arrT = arrT.astype(int)
+        out = np.bitwise_xor(arrT[0], arrT[1])
+        if len(arrT) > 2:
+            for i in range(2, len(arrT)):
+                out = np.bitwise_and(out, arrT[i])
 
-    def _or(self, a, b):
+        return out.T
+
+    def _or(self, arr):
         """
         Performs bitwise OR operation on two integer arrays
         :param a: array
         :param b: array
         :return: bitwise OR result
         """
-        return np.bitwise_or(a, b)
+        arrT = arr.T
+        arrT = arrT.astype(int)
+        out = np.bitwise_xor(arrT[0], arrT[1])
+        if len(arrT) > 2:
+            for i in range(2, len(arrT)):
+                out = np.bitwise_or(out, arrT[i])
+
+        return out.T
+
     def generate_correlated(self,
                             X: np.ndarray,
                             feature_indices: Union[List[int], np.ndarray],

@@ -103,21 +103,24 @@ def test_generate_duplicates_duplication(cc_instance):
 def test_xor_operation(cc_instance):
     a = np.array([1, 0, 1])
     b = np.array([0, 1, 1])
-    result = cc_instance._xor(a, b)
+    arr = [a, b]
+    result = cc_instance._xor(arr)
     expected = np.array([1, 1, 0])
     assert np.array_equal(result, expected), "XOR operation did not produce expected result"
 
 def test_and_operation(cc_instance):
     a = np.array([1, 0, 1])
     b = np.array([0, 1, 1])
-    result = cc_instance._and(a, b)
+    arr = [a, b]
+    result = cc_instance._and(arr)
     expected = np.array([0, 0, 1])
     assert np.array_equal(result, expected), "AND operation did not produce expected result"
 
 def test_or_operation(cc_instance):
     a = np.array([1, 0, 1])
     b = np.array([0, 1, 1])
-    result = cc_instance._or(a, b)
+    arr = [a, b]
+    result = cc_instance._or(arr)
     expected = np.array([1, 1, 1])
     assert np.array_equal(result, expected), "OR operation did not produce expected result"
 
