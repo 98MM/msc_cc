@@ -5,13 +5,13 @@
 ```python
 print(CategoricalClassification.dataset_info)
 ```
-Stores a formatted string of operations made. Function _CategoricalClassification.generate\_data_ resets its contents. Each subsequent function call adds information to it.
+Stores a formatted dictionary of operations made. Function _CategoricalClassification.generate\_data_ resets its contents. Each subsequent function call adds information to it.
 
 ---
 
 ### CategoricalClassification.generate_data
 ```python
-CategoricalClassification.generate_data(n_features, n_samples, cardinality=5, structure=None, ensure_rep=False, seed=42)
+CategoricalClassification.generate_data(n_features, n_samples, cardinality=5, structure=None, ensure_rep=False, random_values=False, low=0, high=1000, seed=42)
 ```
 Generates dataset of shape **_(n_samples, n_features)_**, based on given parameters.
 
@@ -31,25 +31,59 @@ Generates dataset of shape **_(n_samples, n_features)_**, based on given paramet
         - **\[_list_, _list_\]**: where the first _list_ element represents a set of values the feature or features posses, the second the frequencies or probabilities of individual features.
 - **ensure_rep:** _bool_, default=False:
   Control flag. If **_True_**, all possible values **will** appear in the feature.
+- **random_values:** _bool_, default=False:
+  Control flag. If **_True_**, value domain of feature will be random on interval _\[low, high\]_.
+- **low**: _int_
+  Sets lower bound of value domain of feature.
+- **high**: _int_
+  Sets upper bound of value domain of feature. Only used when _random\_values_ is True.
 - **seed**: _int_, default=42.
   Controls **_numpy.random.seed_**               
 
 **Returns**: a **_numpy.ndarray_** dataset with **n\_features** features and **n\_samples** samples.
+---
+### CategoricalClassification.\_feature\_builder
+```python
+CategoricalClassification._feature_builder(feature_attributes, n_samples, ensure_rep=False, random_values=False, low=0, high=1000)
+```
+Helper function used to avoid duplicate code blocks in _generate\_data_. Generates feature array based on _feature\_attributes._
 
+-**feature\_attributes**: _int_ or _list_ or _numpy.ndarray_
+Attributes of feature. Can be just cardinality (_int_), value domain (_list_), or value domain and their respective probabilities  (_list_).
+-**n\_samples**: _int_
+Number of samples in dataset. Determines generated feature vector size.
+- **ensure_rep:** _bool_, default=False:
+  Control flag. If **_True_**, all possible values **will** appear in the feature.
+- **random_values:** _bool_, default=False:
+  Control flag. If **_True_**, value domain of feature will be random on interval _\[low, high\]_.
+- **low**: _int_
+  Sets lower bound of value domain of feature.
+- **high**: _int_
+  Sets upper bound of value domain of feature. Only used when _random\_values_ is True.
+
+**Returns:** a **_numpy.ndarray_** feature array.
 ---
 
 ### CategoricalClassification.\_generate\_feature
 ```python
-CategoricalClassification._generate_feature(v, size, ensure_rep=False, p=None)
+CategoricalClassification._generate_feature(size, vec=None, cardinality=5, ensure_rep=False, random_values=False, low=0, high=1000 p=None)
 ```
 Generates feature array of length **_size_**. Called by _CategoricalClassification.generate\_data_, by utilizing _numpy.random.choice_. If no probabilites array is given, the value density of the generated feature array will be roughly normal, with a randomly chosen peak. The peak will be chosen from the value array.
 
-- **v**: _int_ or _list_:
-  Range of values in feature array. If _int_ the function generates a value array in range _\[0, v\]_.
 - **size**: _int_
   Length of generated feature array.
+- **vec**: _list_ or _numpy.ndarray_, default=None
+  List of feature values, value domain of feature.
+- **cardinality**: _int_, default=5
+  Cardinality of feature to use when generating its value domain. If _vec_ is not None, vec is used instead.
 - **ensure_rep**: _bool_, default=False
   Control flag. If **_True_**, all possible values **will** appear in the feature array.
+- **random_values:** _bool_, default=False:
+  Control flag. If **_True_**, value domain of feature will be random on interval _\[low, high\]_.
+- **low**: _int_
+  Sets lower bound of value domain of feature.
+- **high**: _int_
+  Sets upper bound of value domain of feature. Only used when _random\_values_ is True.
 - **p**: _list_ or _numpy.ndarray_, default=None
   Array of frequencies or probabilities. Must be of length _v_ or equal to the length of _v_.
 
