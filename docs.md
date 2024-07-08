@@ -41,6 +41,7 @@ Generates dataset of shape **_(n_samples, n_features)_**, based on given paramet
   Controls **_numpy.random.seed_**               
 
 **Returns**: a **_numpy.ndarray_** dataset with **n\_features** features and **n\_samples** samples.
+
 ---
 ### CategoricalClassification.\_feature\_builder
 ```python
@@ -62,6 +63,7 @@ Number of samples in dataset. Determines generated feature vector size.
   Sets upper bound of value domain of feature. Only used when _random\_values_ is True.
 
 **Returns:** a **_numpy.ndarray_** feature array.
+
 ---
 
 ### CategoricalClassification.\_generate\_feature
