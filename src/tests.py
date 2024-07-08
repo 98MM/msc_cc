@@ -30,35 +30,35 @@ def test_generate_data_ensure_rep(cc_instance):
     assert len(unique_values) == cardinality, "Not all values represented when 'ensure_rep=True'"
 
 def test_generate_feature_shape_and_type(cc_instance):
-    feature = cc_instance._generate_feature(5, size=100)
+    feature = cc_instance._generate_feature(100, cardinality=5)
     assert isinstance(feature, np.ndarray), "Output should be a numpy array"
     assert feature.shape == (100,), "Shape should be (size,)"
 
 def test_generate_feature_cardinality(cc_instance):
-    feature = cc_instance._generate_feature(5, size=100)
+    feature = cc_instance._generate_feature(100, cardinality=5)
     unique_values = np.unique(feature)
     assert len(unique_values) <= 5, "Feature cardinality not respected for all features"
 
 def test_generate_feature_ensure_rep(cc_instance):
-    feature = cc_instance._generate_feature(50, size=100, ensure_rep=True)
+    feature = cc_instance._generate_feature(100, cardinality=50, ensure_rep=True)
     unique_values = np.unique(feature)
     assert len(unique_values) == 50, "Not all values represented when using 'ensure_rep=True'"
 
 def test_generate_feature_values(cc_instance):
     values = [5, 6, 7, 8, 9, 10]
-    feature = cc_instance._generate_feature(values, size=100)
+    feature = cc_instance._generate_feature(100, vec=values)
     unique_values = np.unique(feature)
     assert any(f in feature for f in values), "Feature values not in input list"
 def test_generate_feature_values_ensure_rep(cc_instance):
     values = [5, 6, 7, 8, 9, 10]
-    feature = cc_instance._generate_feature(values, size=100, ensure_rep=True)
+    feature = cc_instance._generate_feature(100, vec=values, ensure_rep=True)
     unique_values = np.unique(feature)
     assert (values == unique_values).all(), "Feature values should match input list when 'ensure_rep=True'"
 
 def test_generate_feature_density(cc_instance):
     values = [0, 1, 2]
     p = [0.2, 0.4, 0.4]
-    feature = cc_instance._generate_feature(values, size=10000, ensure_rep=True, p=p)
+    feature = cc_instance._generate_feature(10000, vec=values, ensure_rep=True, p=p)
     values, counts = np.unique(feature, return_counts=True)
     generated_p = np.round(counts/10000, decimals=1)
     assert (generated_p == p).all(), "Feature values should have density roughly equal to 'p'"
