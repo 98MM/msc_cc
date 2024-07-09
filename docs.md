@@ -49,9 +49,9 @@ CategoricalClassification._feature_builder(feature_attributes, n_samples, ensure
 ```
 Helper function used to avoid duplicate code blocks in _generate\_data_. Generates feature array based on _feature\_attributes._
 
--**feature\_attributes**: _int_ or _list_ or _numpy.ndarray_
+- **feature\_attributes**: _int_ or _list_ or _numpy.ndarray_
 Attributes of feature. Can be just cardinality (_int_), value domain (_list_), or value domain and their respective probabilities  (_list_).
--**n\_samples**: _int_
+- **n\_samples**: _int_
 Number of samples in dataset. Determines generated feature vector size.
 - **ensure_rep:** _bool_, default=False:
   Control flag. If **_True_**, all possible values **will** appear in the feature.
