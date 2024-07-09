@@ -116,37 +116,39 @@ Generates and adds a new column to given dataset **X**. The column is the result
 
 ### CategoricalClassification.\_xor
 ```python
-CategoricalClassification._xor(a, b)
+CategoricalClassification._xor(arr)
 ```
 Performs bitwise XOR on given vectors and returns result.
-- **a**: _list_ or _numpy.ndarray_
-- **b**: _list_ or _numpy.ndarray_
+- **arr**: _list_ or _numpy.ndarray_
+  List of features to perform the combination on.
 
-**Returns:** a **_numpy.ndarray_** result of **_numpy.bitwise\_xor(a,b)_**
+**Returns:** a **_numpy.ndarray_** result of **_numpy.bitwise\_xor(a,b)_** on given columns in **_arr_**.
 
 ___
 
 ### CategoricalClassification.\_and
 ```python
-CategoricalClassification._and(a, b)
+CategoricalClassification._and(arr)
 ```
 Performs bitwise AND on given vectors and returns result.
-- **a**: _list_ or _numpy.ndarray_
-- **b**: _list_ or _numpy.ndarray_
+- **arr**: _list_ or _numpy.ndarray_
+  List of features to perform the combination on.
 
-**Returns:** a **_numpy.ndarray_** result of **_numpy.bitwise\_and(a,b)_**
+**Returns:** a **_numpy.ndarray_** result of **_numpy.bitwise\_and(a,b)_** on given columns in **_arr_**.
+
 
 ___
 
 ### CategoricalClassification.\_or
 ```python
-CategoricalClassification._or(a, b)
+CategoricalClassification._or(arr)
 ```
 Performs bitwise OR on given vectors and returns result.
-- **a**: _list_ or _numpy.ndarray_
-- **b**: _list_ or _numpy.ndarray_
+- **arr**: _list_ or _numpy.ndarray_
+  List of features to perform the combination on.
 
-**Returns:** a **_numpy.ndarray_** result of **_numpy.bitwise\_or(a,b)_**
+**Returns:** a **_numpy.ndarray_** result of **_numpy.bitwise\_or(a,b)_** on given columns in **_arr_**.
+
 
 ___
 
