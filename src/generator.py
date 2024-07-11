@@ -101,9 +101,7 @@ class CategoricalClassification:
 
                 else:
                     # Data in structure is a tuple of (list of feature indexes, feature attributes)
-                    feature_ixs = data[0]
-                    feature_attributes = data[1]
-
+                    feature_ixs, feature_attributes = data
                     for feature_ix in feature_ixs:
                         # Filling out the dataset up to feature_ix
                         if ix < feature_ix:
