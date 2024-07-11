@@ -14,7 +14,7 @@ class CategoricalClassification:
             'combinations': [],
             'correlations': [],
             'duplicates': [],
-            'labels': [],
+            'labels': {},
             'noise': []
         }
 
@@ -751,11 +751,13 @@ class CategoricalClassification:
 
         print(f"Number of features: {self.dataset_info['general']['n_features']}")
         print(f"Number of generated samples: {self.dataset_info['general']['n_samples']}")
-        if self.dataset_info['downsampling']:
+        if 'downsampling' in self.dataset_info:
             print(
                 f"Dataset downsampled from shape {self.dataset_info['downsampling']['original_shape']},to shape {self.dataset_info['downsampling']['downsampled_shape']}")
-        print(f"Number of classes: {self.dataset_info['labels']['n_class']}")
-        print(f"Class relation: {self.dataset_info['labels']['class_relation']}")
+
+        if 'n_class' in self.dataset_info['labels']:
+            print(f"Number of classes: {self.dataset_info['labels']['n_class']}")
+            print(f"Class relation: {self.dataset_info['labels']['class_relation']}")
 
         print('-------------------------------------')
 
