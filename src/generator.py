@@ -150,7 +150,7 @@ class CategoricalClassification:
 
         """
         Helper function to avoid duplicate code, builds feature
-        :param feature_attributes: either integer (cardinality) or list of feature attributes
+        :param feature_attributes: either integer (cardinality) or list of feature attributesna 
         :param n_samples: number of samples in dataset
         :param ensure_rep: ensures all values are represented at least once in the feature vector
         :param random_values: randomly picked values for vec if true, otherwise values range from [low, cardinality] with by 1
@@ -160,7 +160,7 @@ class CategoricalClassification:
         """
 
         if not isinstance(feature_attributes, (list, np.ndarray)):
-            # feature_cardinality is just an integer, generate feature either with random values or
+            # feature_attributes is just an integer, generate feature either with random values or
             # [low, low+cardinality]
             x = self._generate_feature(n_samples,
                                        cardinality=feature_attributes,
@@ -169,7 +169,7 @@ class CategoricalClassification:
                                        low=low,
                                        high=high)
         else:
-            # feature_cardinality is a list of [value_domain, value_frequencies]
+            # feature_attributes is a list of [value_domain, value_frequencies]
             if isinstance(feature_attributes[0], (list, np.ndarray)):
                 value_domain, value_frequencies = feature_attributes
                 x = self._generate_feature(n_samples,
@@ -177,7 +177,7 @@ class CategoricalClassification:
                                            ensure_rep=ensure_rep,
                                            p=value_frequencies)
             else:
-                # feature_cardinality is value_domain (list of values for feature)
+                # feature_attributes is value_domain (list of values for feature)
                 value_domain = feature_attributes
                 x = self._generate_feature(n_samples,
                                            vec=value_domain,
