@@ -1,3 +1,21 @@
+# Usage
+---
+### Creating a simple dataset
+```python
+# Creates a simple dataset of 10 features, 10k samples, with feature cardinality of all features being 35
+X = cc.generate_data(9, 
+                     10000, 
+                     cardinality=35, 
+                     ensure_rep=True, 
+                     random_values=True, 
+                     low=0, 
+                     high=40)
+
+# Creates target labels via clustering
+y = cc.generate_labels(X, n=2, class_relation='cluster')
+
+```
+
 # Documentation
 ---
 

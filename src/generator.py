@@ -1,39 +1,50 @@
+from __future__ import annotations
+
+from typing import List
+from typing import Literal
+from typing import Optional
+from typing import Tuple
+from typing import Union
+
 import numpy as np
+from numpy.typing import ArrayLike
 from scipy.linalg import qr
 from scipy.stats import norm
 from sklearn.cluster import KMeans
 from sklearn.utils import resample
-from typing import List, Union, Optional, Tuple
 
 
 class CategoricalClassification:
 
-    def __init__(self):
+    def __init__(self, seed: int = 42):
+        np.random.seed(seed)
         self.dataset_info = {
             'general': {},
             'combinations': [],
             'correlations': [],
             'duplicates': [],
             'labels': {},
-            'noise': []
+            'noise': [],
         }
 
     def __repr__(self):
         return f"CategoricalClassification(dataset_info={self.dataset_info})"
 
-    def generate_data(self,
-                      n_features: int,
-                      n_samples: int,
-                      cardinality: int = 5,
-                      structure: Optional[Union[List, np.ndarray]] = None,
-                      ensure_rep: bool = False,
-                      random_values: Optional[bool] = False,
-                      low: Optional[int] = 0,
-                      high: Optional[int] = 1000,
-                      seed: int = 42) -> np.ndarray:
+    def generate_data(
+        self,
+        n_features: int,
+        n_samples: int,
+        cardinality: int = 5,
+        structure: list | ArrayLike | None = None,
+        ensure_rep: bool = False,
+        random_values: bool | None = False,
+        low: int | None = 0,
+        high: int | None = 1000,
+        seed: int = 42,
+    ) -> np.ndarray:
 
         """
-        Generates dataset based on parameters
+        Generates dataset based on given parameters
         :param n_features: number of generated features
         :param n_samples: number of generated samples
         :param cardinality: default cardinality of the dataset
@@ -53,102 +64,118 @@ class CategoricalClassification:
                 'cardinality': cardinality,
                 'structure': structure,
                 'ensure_rep': ensure_rep,
-                'seed': seed
-            }
+                'seed': seed,
+            },
         })
 
         np.random.seed(seed)
         X = np.empty([n_features, n_samples])
 
+        # No specific structure parameter passed
         if structure is None:
-            # No specific structure parameter passed
             for i in range(n_features):
-                x = self._generate_feature(n_samples,
-                                           cardinality=cardinality,
-                                           ensure_rep=ensure_rep,
-                                           random_values=random_values,
-                                           low=low,
-                                           high=high)
+                x = self._generate_feature(
+                    n_samples,
+                    cardinality=cardinality,
+                    ensure_rep=ensure_rep,
+                    random_values=random_values,
+                    low=low,
+                    high=high,
+                )
                 X[i] = x
+        # Structure parameter passed, building based on structure
         else:
-            # Structure parameter passed, building based on structure
             ix = 0
             for data in structure:
+
+                # Data in structure is a tuple of (feature index (integer), feature attributes)
                 if not isinstance(data[0], (list, np.ndarray)):
-                    # Data in structure is a tuple of (feature index (integer), feature attributes)
                     feature_ix, feature_attributes = data
 
+                    # Filling out the dataset up to column index feature_ix
                     if ix < feature_ix:
-                        # Filling out the dataset up to column index feature_ix
                         for i in range(ix, feature_ix):
-                            x = self._generate_feature(n_samples,
-                                                       cardinality=cardinality,
-                                                       ensure_rep=ensure_rep,
-                                                       random_values=random_values,
-                                                       low=low,
-                                                       high=high)
+                            x = self._generate_feature(
+                                n_samples,
+                                cardinality=cardinality,
+                                ensure_rep=ensure_rep,
+                                random_values=random_values,
+                                low=low,
+                                high=high,
+                            )
                             X[ix] = x
                             ix += 1
 
-                    x = self._feature_builder(feature_attributes,
-                                              n_samples,
-                                              ensure_rep=ensure_rep,
-                                              random_values=random_values,
-                                              low=low,
-                                              high=high)
+                    x = self._configure_generate_feature(
+                        feature_attributes,
+                        n_samples,
+                        ensure_rep=ensure_rep,
+                        random_values=random_values,
+                        low=low,
+                        high=high,
+                    )
                     X[ix] = x
                     ix += 1
 
+                # Data in structure is a tuple of (list of feature indexes, feature attributes)
                 else:
-                    # Data in structure is a tuple of (list of feature indexes, feature attributes)
                     feature_ixs, feature_attributes = data
+
+                    # Filling out the dataset up to feature_ix
                     for feature_ix in feature_ixs:
-                        # Filling out the dataset up to feature_ix
                         if ix < feature_ix:
                             for i in range(ix, feature_ix):
-                                x = self._generate_feature(n_samples,
-                                                           cardinality=cardinality,
-                                                           ensure_rep=ensure_rep,
-                                                           random_values=random_values,
-                                                           low=low,
-                                                           high=high)
+                                x = self._generate_feature(
+                                    n_samples,
+                                    cardinality=cardinality,
+                                    ensure_rep=ensure_rep,
+                                    random_values=random_values,
+                                    low=low,
+                                    high=high,
+                                )
                                 X[ix] = x
                                 ix += 1
 
-                        x = self._feature_builder(feature_attributes,
-                                                  n_samples,
-                                                  ensure_rep=ensure_rep,
-                                                  random_values=random_values,
-                                                  low=low,
-                                                  high=high)
+                        x = self._configure_generate_feature(
+                            feature_attributes,
+                            n_samples,
+                            ensure_rep=ensure_rep,
+                            random_values=random_values,
+                            low=low,
+                            high=high,
+                        )
 
                         X[ix] = x
                         ix += 1
 
+            # Fill out the rest of the dataset
             if ix < n_features:
-                # Fill out the rest of the dataset
                 for i in range(ix, n_features):
-                    x = self._generate_feature(n_samples,
-                                               cardinality=cardinality,
-                                               ensure_rep=ensure_rep,
-                                               random_values=random_values,
-                                               low=low,
-                                               high=high)
+                    x = self._generate_feature(
+                        n_samples,
+                        cardinality=cardinality,
+                        ensure_rep=ensure_rep,
+                        random_values=random_values,
+                        low=low,
+                        high=high,
+                    )
                     X[i] = x
 
         return X.T
 
-    def _feature_builder(self,
-                         feature_attributes: Union[int, List, np.ndarray],
-                         n_samples: int,
-                         ensure_rep: bool = False,
-                         random_values: Optional[bool] = False,
-                         low: Optional[int] = 0,
-                         high: Optional[int] = 1000) -> np.ndarray:
+    def _configure_generate_feature(
+        self,
+        feature_attributes: int | list | ArrayLike,
+        n_samples: int,
+        ensure_rep: bool = False,
+        random_values: bool | None = False,
+        low: int | None = 0,
+        high: int | None = 1000,
+    ) -> np.ndarray:
 
         """
-        Helper function to avoid duplicate code, builds feature
-        :param feature_attributes: either integer (cardinality) or list of feature attributesna 
+        Helper function, calls _generate_feature with appropriate parameters based on feature_attributes
+        :param feature_attributes: either integer (cardinality) or list of feature attributes
         :param n_samples: number of samples in dataset
         :param ensure_rep: ensures all values are represented at least once in the feature vector
         :param random_values: randomly picked values for vec if true, otherwise values range from [low, cardinality] with by 1
@@ -157,43 +184,51 @@ class CategoricalClassification:
         :return: feature vector
         """
 
+        # feature_cardinality is just an integer, generate feature either with random values or
+        # [low, low+cardinality]
         if not isinstance(feature_attributes, (list, np.ndarray)):
-            # feature_attributes is just an integer, generate feature either with random values or
-            # [low, low+cardinality]
-            x = self._generate_feature(n_samples,
-                                       cardinality=feature_attributes,
-                                       ensure_rep=ensure_rep,
-                                       random_values=random_values,
-                                       low=low,
-                                       high=high)
+            x = self._generate_feature(
+                n_samples,
+                cardinality=feature_attributes,
+                ensure_rep=ensure_rep,
+                random_values=random_values,
+                low=low,
+                high=high,
+            )
+        # feature_cardinality is a list of [value_domain, value_frequencies]
         else:
-            # feature_attributes is a list of [value_domain, value_frequencies]
             if isinstance(feature_attributes[0], (list, np.ndarray)):
                 value_domain, value_frequencies = feature_attributes
-                x = self._generate_feature(n_samples,
-                                           vec=value_domain,
-                                           ensure_rep=ensure_rep,
-                                           p=value_frequencies)
+                x = self._generate_feature(
+                    n_samples,
+                    vec=value_domain,
+                    ensure_rep=ensure_rep,
+                    p=value_frequencies,
+                )
+            # feature_cardinality is value_domain (list of values for feature)
             else:
-                # feature_attributes is value_domain (list of values for feature)
                 value_domain = feature_attributes
-                x = self._generate_feature(n_samples,
-                                           vec=value_domain,
-                                           ensure_rep=ensure_rep)
+                x = self._generate_feature(
+                    n_samples,
+                    vec=value_domain,
+                    ensure_rep=ensure_rep,
+                )
 
         return x
 
-    def _generate_feature(self,
-                          size: int,
-                          vec: Optional[Union[List[int], np.ndarray]] = None,
-                          cardinality: int = 5,
-                          ensure_rep: bool = False,
-                          random_values: Optional[bool] = False,
-                          low: Optional[int] = 0,
-                          high: Optional[int] = 1000,
-                          p: Optional[Union[List[float], np.ndarray]] = None) -> np.ndarray:
+    def _generate_feature(
+        self,
+        size: int,
+        vec: list[int] | ArrayLike | None = None,
+        cardinality: int = 5,
+        ensure_rep: bool = False,
+        random_values: bool | None = False,
+        low: int | None = 0,
+        high: int | None = 1000,
+        p: list[float] | np.ndarray | None = None,
+    ) -> np.ndarray:
         """
-        Generates feature vector of length size. Default probability density distribution is approx. normal, centred around a randomly picked value.
+        Generates feature vector of length size. Default probability density distribution is approximately normal, centred around a randomly picked value.
         :param vec: list of feature values
         :param cardinality: single value cardinality
         :param size: length of feature vector
@@ -230,11 +265,13 @@ class CategoricalClassification:
         np.random.shuffle(sampled_values)
         return sampled_values
 
-    def generate_combinations(self,
-                              X: np.ndarray,
-                              feature_indices: Union[List[int], np.ndarray],
-                              combination_function: Optional = None,
-                              combination_type: str = 'linear') -> np.ndarray:
+    def generate_combinations(
+        self,
+        X: ArrayLike,
+        feature_indices: list[int] | ArrayLike,
+        combination_function: Optional = None,
+        combination_type: Literal['linear', 'nonlinear'] = 'linear',
+    ) -> np.ndarray:
         """
         Generates linear, nonlinear, or custom combinations within feature vectors in given dataset X
         :param X: dataset
@@ -261,16 +298,15 @@ class CategoricalClassification:
         self.dataset_info['combinations'].append({
             'feature_indices': feature_indices,
             'combination_type': combination_type,
-            'combination_ix': combination_ix
+            'combination_ix': combination_ix,
         })
 
         return np.column_stack((X, combination_result))
 
-    def _xor(self, arr):
+    def _xor(self, arr: list[int] | ArrayLike) -> np.ndarray:
         """
         Performs bitwise XOR operation on two integer arrays
-        :param a: array
-        :param b: array
+        :param arr: features to perform XOR operation on
         :return: bitwise XOR result
         """
         arrT = arr.T
@@ -282,11 +318,10 @@ class CategoricalClassification:
 
         return out.T
 
-    def _and(self, arr):
+    def _and(self, arr: list[int] | ArrayLike) -> np.ndarray:
         """
         Performs bitwise AND operation on two integer arrays
-        :param a: array
-        :param b: array
+        :param arr: features to perform AND operation on
         :return: bitwise AND result
         """
         arrT = arr.T
@@ -298,11 +333,10 @@ class CategoricalClassification:
 
         return out.T
 
-    def _or(self, arr):
+    def _or(self, arr: list[int] | ArrayLike) -> np.ndarray:
         """
         Performs bitwise OR operation on two integer arrays
-        :param a: array
-        :param b: array
+        :param arr: features to perform OR operation on
         :return: bitwise OR result
         """
         arrT = arr.T
@@ -314,10 +348,12 @@ class CategoricalClassification:
 
         return out.T
 
-    def generate_correlated(self,
-                            X: np.ndarray,
-                            feature_indices: Union[List[int], np.ndarray],
-                            r: float = 0.8) -> np.ndarray:
+    def generate_correlated(
+        self,
+        X: ArrayLike,
+        feature_indices: list[int] | ArrayLike,
+        r: float = 0.8,
+    ) -> np.ndarray:
 
         """
         Generates correlated features using the given feature indices. Correlation is based on cosine of angle between vectors with mean 0.
@@ -365,14 +401,16 @@ class CategoricalClassification:
         self.dataset_info['correlations'].append({
             'feature_indices': feature_indices,
             'correlated_indices': correlated_ixs,
-            'correlation_factor': r
+            'correlation_factor': r,
         })
 
         return np.column_stack((X, correlated_features))
 
-    def generate_duplicates(self,
-                            X: np.ndarray,
-                            feature_indices: Union[List[int], np.ndarray]) -> np.ndarray:
+    def generate_duplicates(
+        self,
+        X: ArrayLike,
+        feature_indices: list[int] | ArrayLike,
+    ) -> np.ndarray:
         """
         Generates duplicate features
         :param X: dataset
@@ -388,19 +426,22 @@ class CategoricalClassification:
 
         self.dataset_info['duplicates'].append({
             'feature_indices': feature_indices,
-            'duplicate_indices': duplicated_ixs
+            'duplicate_indices': duplicated_ixs,
         })
 
         return np.column_stack((X, selected_features))
 
-    def generate_labels(self,
-                        X: np.ndarray,
-                        n: int = 2,
-                        p: Union[float, list[float], np.ndarray] = 0.5,
-                        k: Union[int, float] = 2,
-                        decision_function: Optional = None,
-                        class_relation: str = 'linear',
-                        balance: bool = False):
+    def generate_labels(
+        self,
+        X: ArrayLike,
+        n: int = 2,
+        p: float | list[float] | ArrayLike = 0.5,
+        k: int | float = 2,
+        decision_function: Optional = None,
+        class_relation: Literal['linear', 'nonlinear', 'cluster'] = 'linear',
+        balance: bool = False,
+        random_state: int = 42,
+    ):
         """
         Generates labels for dataset X
         :param X: dataset
@@ -410,6 +451,7 @@ class CategoricalClassification:
         :param decision_function: optional user-defined decision function
         :param class_relation: string, either 'linear', 'nonlinear', or 'cluster'
         :param balance: boolean, whether to balance clustering class labels
+        :param random_state: seed for KMeans clustering, defaults to 42
         :return: array of labels, corresponding to dataset X
         """
 
@@ -475,38 +517,43 @@ class CategoricalClassification:
                 p = 1.0
             else:
                 p = [p, 1 - p]
-            y = self._cluster_data(X, n, p=p, balance=balance)
+            y = self._cluster_data(X, n, p=p, balance=balance, random_state=random_state)
 
         self.dataset_info.update({
             'labels': {
                 'class_relation': class_relation,
-                'n_class': n
-            }
+                'n_class': n,
+            },
         })
 
         return y
 
-    def _cluster_data(self,
-                      X: np.ndarray,
-                      n: int,
-                      p: Optional[Union[float, List[float], np.ndarray]] = 1.0,
-                      balance: bool = False) -> np.ndarray:
+    def _cluster_data(
+        self,
+        X: ArrayLike,
+        n: int,
+        p: float | list[float] | ArrayLike | None = 1.0,
+        balance: bool = False,
+        random_state: int = 42,
+    ) -> np.ndarray:
         """
         Cluster data using kmeans
         :param X: dataset
         :param n: number of clusters
         :param p: class distribution
         :param balance: balance the clusters according to p
+        :random_state: seed for KMeans clustering, defaults to 42
         :return: array of labels, corresponding to dataset X
         """
 
-        kmeans = KMeans(n_clusters=n)
+        kmeans = KMeans(n_clusters=n, random_state=random_state)
 
         kmeans.fit(X)
 
         cluster_labels = kmeans.labels_
 
-        if not isinstance(p, (list, np.ndarray)):  # Fully balanced clusters
+        # Fully balanced clusters
+        if not isinstance(p, (list, np.ndarray)):
             samples_per_cluster = [len(X) // n] * n
         else:
             samples = len(X)
@@ -519,7 +566,7 @@ class CategoricalClassification:
                     for val in p:
                         samples_per_cluster.append(int(samples * val))
                 else:
-                    raise Exception("Length of balance parameter must equal number of clusters.")
+                    raise Exception('Length of balance parameter must equal number of clusters.')
 
         # Adjust cluster sizes
         if balance:
@@ -532,21 +579,26 @@ class CategoricalClassification:
                 adjustment = samples_per_cluster[i] - cluster_size
                 adjustments.append(adjustment)
 
-                if adjustment < 0:  # Cluter is too large
-
+                # Cluster is too large
+                if adjustment < 0:
                     centroid = kmeans.cluster_centers_[i]
-                    dataset_indices = np.where(cluster_labels == i)[0]  # Indices of samples in dataset
+                    # Indices of samples in dataset
+                    dataset_indices = np.where(cluster_labels == i)[0]
                     cluster_samples = np.copy(X[dataset_indices])
 
-                    distances = np.linalg.norm(cluster_samples - centroid,
-                                               axis=1)  # Distances of cluster samples to cluster centroid
+                    distances = np.linalg.norm(
+                        cluster_samples - centroid,
+                        axis=1,
+                    )  # Distances of cluster samples to cluster centroid
                     cluster_sample_indices = np.argsort(distances)
                     dataset_indices_sorted = dataset_indices[
-                        cluster_sample_indices]  # Indices of samples sorted by sample distance to cluster centroid
+                        cluster_sample_indices
+                    ]  # Indices of samples sorted by sample distance to cluster centroid
 
                     overflow_sample_indices = cluster_sample_indices[samples_per_cluster[i]:]  # Overflow samples
                     dataset_indices_sorted = dataset_indices_sorted[
-                                             samples_per_cluster[i]:]  # Dataset indices of overflow samples
+                                             samples_per_cluster[i]:
+                    ]  # Dataset indices of overflow samples
 
                     for i in range(len(overflow_sample_indices)):
                         overflow_samples.append(cluster_samples[overflow_sample_indices[i]])
@@ -576,12 +628,14 @@ class CategoricalClassification:
 
         return np.array(cluster_labels)
 
-    def generate_noise(self,
-                       X: np.ndarray,
-                       y: Union[List[int], np.ndarray],
-                       p: float = 0.2,
-                       type: str = "categorical",
-                       missing_val: Union[str, int, float] = float('-inf')) -> np.ndarray:
+    def generate_noise(
+        self,
+        X: ArrayLike,
+        y: list[int] | ArrayLike,
+        p: float = 0.2,
+        type: Literal['categorical', 'missing'] = 'categorical',
+        missing_val: str | int | float = float('-inf'),
+    ) -> np.ndarray:
 
         """
         Simulates noise on given dataset X
@@ -595,10 +649,10 @@ class CategoricalClassification:
 
         self.dataset_info['noise'].append({
             'type': type,
-            'amount': p
+            'amount': p,
         })
 
-        if type == "categorical":
+        if type == 'categorical':
             label_values, label_count = np.unique(y, return_counts=True)
             n_labels = len(label_values)
 
@@ -653,7 +707,7 @@ class CategoricalClassification:
 
             return X_noise
 
-        elif type == "missing":
+        elif type == 'missing':
             X_noise = np.copy(X)
             Xn_T = X_noise.T
             n = Xn_T.shape[1]
@@ -668,12 +722,17 @@ class CategoricalClassification:
 
             return Xn_T.T
 
-    def downsample_dataset(self,
-                           X: np.array,
-                           y: Union[List[int], np.ndarray],
-                           N: Optional[Union[int, None]] = None,
-                           seed: int = 42,
-                           reshuffle: bool = False) -> Tuple[np.array, np.ndarray]:
+        else:
+            raise ValueError(f'Type {type} not supported')
+
+    def downsample_dataset(
+        self,
+        X: ArrayLike,
+        y: list[int] | ArrayLike,
+        N: int | None = None,
+        seed: int = 42,
+        reshuffle: bool = False,
+    ) -> tuple[np.ndarray, np.ndarray]:
 
         """
         Downsamples dataset X according to N or the number of samples in minority class, resulting in a balanced dataset.
@@ -692,16 +751,18 @@ class CategoricalClassification:
             N = min(counts)
 
         if N > min(counts):
-            raise ValueError("N must be equal to or less than the number of samples in minority class")
+            raise ValueError('N must be equal to or less than the number of samples in minority class')
 
         X_arrays_list = []
         y_downsampled = []
         for label in values:
             X_label = [X[i] for i in range(len(y)) if y[i] == label]
-            X_label_downsample = resample(X_label,
-                                          replace=True,
-                                          n_samples=N,
-                                          random_state=seed)
+            X_label_downsample = resample(
+                X_label,
+                replace=True,
+                n_samples=N,
+                random_state=seed,
+            )
             X_arrays_list.append(X_label_downsample)
             ys = [label] * N
             y_downsampled = np.concatenate((y_downsampled, ys), axis=0)
@@ -719,13 +780,17 @@ class CategoricalClassification:
         self.dataset_info.update({
             'downsampling': {
                 'original_shape': original_shape,
-                'downsampled_shape': downsampled_shape
-            }
+                'downsampled_shape': downsampled_shape,
+            },
         })
 
         return X_downsampled, y_downsampled
 
-    def print_dataset(self, X, y):
+    def print_dataset(
+        self,
+        X: ArrayLike,
+        y: ArrayLike,
+    ):
         """
         Prints given dataset
         :param X: dataset
@@ -742,7 +807,7 @@ class CategoricalClassification:
                     print(arr[i], end='')
                 else:
                     print(arr[i], end=', ')
-            print("], Label: {}".format(y[n]))
+            print(f'], Label: {y[n]}')
             n += 1
 
     def summarize(self):
