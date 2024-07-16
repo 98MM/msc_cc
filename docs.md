@@ -29,7 +29,16 @@ Stores a formatted dictionary of operations made. Function _CategoricalClassific
 
 ### CategoricalClassification.generate_data
 ```python
-CategoricalClassification.generate_data(n_features, n_samples, cardinality=5, structure=None, ensure_rep=False, random_values=False, low=0, high=1000, seed=42)
+CategoricalClassification.generate_data(n_features, 
+                                        n_samples, 
+                                        cardinality=5, 
+                                        structure=None, 
+                                        ensure_rep=False, 
+                                        random_values=False, 
+                                        low=0, 
+                                        high=1000,
+                                        k=10,
+                                        seed=42)
 ```
 Generates dataset of shape **_(n_samples, n_features)_**, based on given parameters.
 
@@ -55,17 +64,25 @@ Generates dataset of shape **_(n_samples, n_features)_**, based on given paramet
   Sets lower bound of value domain of feature.
 - **high**: _int_
   Sets upper bound of value domain of feature. Only used when _random\_values_ is True.
+- **k**: _int_ or _float_, default=10.
+  Constant, sets width of feature (normal) distribution peak. Higher the value, narrower the peak.
 - **seed**: _int_, default=42.
   Controls **_numpy.random.seed_**               
 
 **Returns**: a **_numpy.ndarray_** dataset with **n\_features** features and **n\_samples** samples.
 
 ---
-### CategoricalClassification.\_feature\_builder
+### CategoricalClassification.\_configure\_generate\_feature
 ```python
-CategoricalClassification._feature_builder(feature_attributes, n_samples, ensure_rep=False, random_values=False, low=0, high=1000)
+CategoricalClassification._feature_builder(feature_attributes, 
+                                           n_samples, 
+                                           ensure_rep=False, 
+                                           random_values=False, 
+                                           low=0, 
+                                           high=1000,
+                                           k=10)
 ```
-Helper function used to avoid duplicate code blocks in _generate\_data_. Generates feature array based on _feature\_attributes._
+Helper function used to configure _\_generate\_feature()_ with proper parameters based on _feature\_atributes_.
 
 - **feature\_attributes**: _int_ or _list_ or _numpy.ndarray_
 Attributes of feature. Can be just cardinality (_int_), value domain (_list_), or value domain and their respective probabilities  (_list_).
@@ -79,14 +96,23 @@ Number of samples in dataset. Determines generated feature vector size.
   Sets lower bound of value domain of feature.
 - **high**: _int_
   Sets upper bound of value domain of feature. Only used when _random\_values_ is True.
-
+- **k**: _int_ or _float_, default=10.
+  Constant, sets width of feature (normal) distribution peak. Higher the value, narrower the peak.
 **Returns:** a **_numpy.ndarray_** feature array.
 
 ---
 
 ### CategoricalClassification.\_generate\_feature
 ```python
-CategoricalClassification._generate_feature(size, vec=None, cardinality=5, ensure_rep=False, random_values=False, low=0, high=1000 p=None)
+CategoricalClassification._generate_feature(size, 
+                                            vec=None, 
+                                            cardinality=5, 
+                                            ensure_rep=False, 
+                                            random_values=False, 
+                                            low=0, 
+                                            high=1000,
+                                            k=10,
+                                            p=None)
 ```
 Generates feature array of length **_size_**. Called by _CategoricalClassification.generate\_data_, by utilizing _numpy.random.choice_. If no probabilites array is given, the value density of the generated feature array will be roughly normal, with a randomly chosen peak. The peak will be chosen from the value array.
 
@@ -104,6 +130,8 @@ Generates feature array of length **_size_**. Called by _CategoricalClassificati
   Sets lower bound of value domain of feature.
 - **high**: _int_
   Sets upper bound of value domain of feature. Only used when _random\_values_ is True.
+- - **k**: _int_ or _float_, default=10.
+  Constant, sets width of feature (normal) distribution peak. Higher the value, narrower the peak.
 - **p**: _list_ or _numpy.ndarray_, default=None
   Array of frequencies or probabilities. Must be of length _v_ or equal to the length of _v_.
 
@@ -113,7 +141,10 @@ ___
 
 ### CategoricalClassification.generate\_combinations
 ```python
-CategoricalClassification.generate_combinations(X, feature_indices, combination_function=None, combination_type='linear')
+CategoricalClassification.generate_combinations(X, 
+                                                feature_indices, 
+                                                combination_function=None, 
+                                                combination_type='linear')
 ```
 Generates and adds a new column to given dataset **X**. The column is the result of a combination of features selected with **feature\_indices**. Combinations can be linear, nonlinear, or custom defined functions.
 
@@ -172,7 +203,9 @@ ___
 
 ### CategoricalClassification.generate\_correlated
 ```python
-CategoricalClassification.generate_correlated(X, feature_indices, r=0.8)
+CategoricalClassification.generate_correlated(X, 
+                                              feature_indices, 
+                                              r=0.8)
 ```
 Generates and adds new columns to given dataset **X**, correlated to the selected features, by a Pearson correlation coefficient of **r**. For vectors with mean 0, their correlation equals the cosine of their angle.  
 
@@ -189,7 +222,8 @@ Generates and adds new columns to given dataset **X**, correlated to the selecte
 
 ### CategoricalClassification.generate\_duplicates
 ```python
-CategoricalClassification.generate_duplicates(X, feature_indices)
+CategoricalClassification.generate_duplicates(X, 
+                                              feature_indices)
 ```
 
 Duplicates selected feature (column) indices, and adds the duplicated columns to the given dataset **X**.
@@ -204,7 +238,13 @@ Duplicates selected feature (column) indices, and adds the duplicated columns to
 ---
 ### CategoricalClassification.generate\_labels
 ```python
-CategoricalClassification.generate_nonlinear_labels(X, n=2, p=0.5, k=2, decision_function=None, class_relation='linear', balance=False)
+CategoricalClassification.generate_nonlinear_labels(X, 
+                                                    n=2, 
+                                                    p=0.5, 
+                                                    k=2, 
+                                                    decision_function=None, 
+                                                    class_relation='linear', 
+                                                    balance=False)
 ```
 
 Generates a vector of labels. Labels are (currently) generated as either a linear, nonlinear, or custom defined function. It generates classes using a decision boundary generated by the linear, nonlinear, or custom defined function.
@@ -230,7 +270,10 @@ Generates a vector of labels. Labels are (currently) generated as either a linea
 
 ### CategoricalClassification.\_cluster\_data
 ```python
-CategoricalClassification._cluster_data(X, n, p=1.0, balance=False)
+CategoricalClassification._cluster_data(X, 
+                                        n, 
+                                        p=1.0, 
+                                        balance=False)
 ```
 Clusters given data using KMeans clustering.
 
@@ -248,7 +291,11 @@ ___
 
 ### CategoricalClassification.generate\_noise
 ```python
-CategoricalClassification.generate_noise( X, y, p=0.2, type="categorical", missing_val=float('-inf'))
+CategoricalClassification.generate_noise(X, 
+                                         y, 
+                                         p=0.2, 
+                                         type="categorical", 
+                                         missing_val=float('-inf'))
 ```
 
 Generates categorical noise or simulates missing data on a given dataset. 
@@ -269,8 +316,13 @@ Generates categorical noise or simulates missing data on a given dataset.
 ---
 
 ### CategoricalClassification.downsample\_dataset
+
 ```python
-CategoricalClassification.downsample_dataset(X, y, N=None, seed=42, reshuffle=False):
+CategoricalClassification.downsample_dataset(X, 
+                                             y, 
+                                             n=None, 
+                                             seed=42, 
+                                             reshuffle=False):
 ```
 
 Downsamples given dataset according to N or the number of samples in minority class, resulting in a balanced dataset.
