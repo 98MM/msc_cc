@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import List
 from typing import Literal
 from typing import Optional
@@ -323,6 +321,7 @@ class CategoricalClassification:
         :param arr: features to perform XOR operation on
         :return: bitwise XOR result
         """
+        arr = np.array(arr)
         arrT = arr.T
         arrT = arrT.astype(int)
         out = np.bitwise_xor(arrT[0], arrT[1])
@@ -338,9 +337,10 @@ class CategoricalClassification:
         :param arr: features to perform AND operation on
         :return: bitwise AND result
         """
+        arr = np.array(arr)
         arrT = arr.T
         arrT = arrT.astype(int)
-        out = np.bitwise_xor(arrT[0], arrT[1])
+        out = np.bitwise_and(arrT[0], arrT[1])
         if len(arrT) > 2:
             for i in range(2, len(arrT)):
                 out = np.bitwise_and(out, arrT[i])
@@ -353,9 +353,10 @@ class CategoricalClassification:
         :param arr: features to perform OR operation on
         :return: bitwise OR result
         """
+        arr = np.array(arr)
         arrT = arr.T
         arrT = arrT.astype(int)
-        out = np.bitwise_xor(arrT[0], arrT[1])
+        out = np.bitwise_or(arrT[0], arrT[1])
         if len(arrT) > 2:
             for i in range(2, len(arrT)):
                 out = np.bitwise_or(out, arrT[i])
@@ -472,8 +473,7 @@ class CategoricalClassification:
         if isinstance(p, (list, np.ndarray)):
             if sum(p) > 1: raise ValueError('sum of values in must be less than 1.0')
             if len(p) > n: raise ValueError('length of p must equal n')
-
-        if p > 1: raise ValueError('p must be less than 1.0')
+        elif p > 1.0: raise ValueError('p must be less than 1.0')
 
         n_samples, n_features = X.shape
 
@@ -508,22 +508,20 @@ class CategoricalClassification:
 
                     for i in range(1, len(percentiles) - 1):
                         percentiles[i] += percentiles[i - 1]
-
                     percentiles.insert(0, 0)
                     percentiles.pop()
-                    print(percentiles)
 
                     p_points = np.percentile(decision_boundary, percentiles)
-                    print(p_points)
 
                     y = np.zeros_like(decision_boundary, dtype=int)
+
                     for i in range(1, n):
                         p_point = p_points[i]
-                        for j in range(len(decision_boundary)):
-                            if decision_boundary[j] > p_point:
-                                y[j] += 1
+                        y += np.where(decision_boundary > p_point, 1, 0)
             else:
                 decision_boundary = decision_function(X)
+                if isinstance(p, (list, np.ndarray)):
+                    p = p[0]
                 p_point = np.percentile(decision_boundary, p * 100)
                 y = np.where(decision_boundary > p_point, 1, 0)
         else:
@@ -824,45 +822,57 @@ class CategoricalClassification:
             print(f'], Label: {y[n]}')
             n += 1
 
-    def summarize(self):
+    # TODO: Logging function
 
-        print(f"Number of features: {self.dataset_info['general']['n_features']}")
-        print(f"Number of generated samples: {self.dataset_info['general']['n_samples']}")
+
+    def _print_wrapped_text(self, text: str, max_width: int=50):
+        words = text.split()
+        current_line = ""
+
+        for word in words:
+            if len(current_line) + len(word) + 1 <= max_width:
+                current_line += (word + " ")
+            else:
+                print(current_line.strip())
+                current_line = word + " "
+
+        if current_line:
+            print(current_line.strip())
+    def summarize(self, max_width: int=45):
+
+        self._print_wrapped_text(f"Number of features: {self.dataset_info['general']['n_features']}", max_width=max_width)
+        self._print_wrapped_text(f"Number of generated samples: {self.dataset_info['general']['n_samples']}", max_width=max_width)
         if 'downsampling' in self.dataset_info:
-            print(
-                f"Dataset downsampled from shape {self.dataset_info['downsampling']['original_shape']},to shape {self.dataset_info['downsampling']['downsampled_shape']}")
+            self._print_wrapped_text(f"Downsampled from shape {self.dataset_info['downsampling']['original_shape']}, to shape {self.dataset_info['downsampling']['downsampled_shape']}", max_width=max_width)
 
         if 'n_class' in self.dataset_info['labels']:
-            print(f"Number of classes: {self.dataset_info['labels']['n_class']}")
-            print(f"Class relation: {self.dataset_info['labels']['class_relation']}")
+            self._print_wrapped_text(f"Number of classes: {self.dataset_info['labels']['n_class']}", max_width=max_width)
+            self._print_wrapped_text(f"Class relation: {self.dataset_info['labels']['class_relation']}", max_width=max_width)
 
-        print('-------------------------------------')
+        print('-'*max_width)
 
         if len(self.dataset_info['combinations']) > 0:
-            print("Combinations:")
+            self._print_wrapped_text(f"{'Combinations'}", max_width=max_width)
             for comb in self.dataset_info['combinations']:
-                print(
-                    f"Features {comb['feature_indices']} are in {comb['combination_type']} combination, result in {comb['combination_ix']}")
-            print('-------------------------------------')
+                self._print_wrapped_text(f"Features {comb['feature_indices']} are in {comb['combination_type']} combination, result in {comb['combination_ix']}", max_width=max_width)
+            print('-'*max_width)
 
         if len(self.dataset_info['correlations']) > 0:
-            print("Correlations:")
+            self._print_wrapped_text(f"{'Correlations'}", max_width=max_width)
             for corr in self.dataset_info['correlations']:
-                print(
-                    f"Features {corr['feature_indices']} are correlated to {corr['correlated_indices']} with a factor of {corr['correlation_factor']}")
-            print('-------------------------------------')
+                self._print_wrapped_text(f"Features {corr['feature_indices']} are correlated to {corr['correlated_indices']} with a factor of {corr['correlation_factor']}", max_width=max_width)
+            print('-'*max_width)
 
         if len(self.dataset_info['duplicates']) > 0:
-            print("Duplicates:")
+            self._print_wrapped_text(f"{'Duplicates'}", max_width=max_width)
             for dup in self.dataset_info['duplicates']:
-                print(
-                    f"Features {dup['feature_indices']} are duplicated, duplicate indexes are {dup['duplicate_indices']}")
-            print('-------------------------------------')
+                self._print_wrapped_text(f"Features {dup['feature_indices']} are duplicated, duplicate indexes are {dup['duplicate_indices']}", max_width=max_width)
+            print('-'*max_width)
 
         if len(self.dataset_info['noise']) > 0:
-            print("Simulated noise:")
+            self._print_wrapped_text(f"{'Simulated noise'}", max_width=max_width)
             for noise in self.dataset_info['noise']:
-                print(f"Simulated {noise['type']} noise, amount of {noise['noise_amount']}")
-            print('-------------------------------------')
+                self._print_wrapped_text(f"Simulated {noise['amount']}% of {noise['type']} noise", max_width=max_width)
+            print('-'*max_width)
 
-        print("\nFor more information on dataset structure, print cc.dataset_info['general']['structure']")
+        self._print_wrapped_text("\nFor more information on dataset structure, print cc.dataset_info['general']['structure']", max_width=max_width)
