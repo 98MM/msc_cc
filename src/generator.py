@@ -453,9 +453,10 @@ class CategoricalClassification:
         p: float | list[float] | ArrayLike = 0.5,
         k: int | float = 2,
         decision_function: Optional = None,
-        class_relation: Literal['linear', 'nonlinear', 'cluster'] = 'linear',
+        class_relation: Literal['linear', 'nonlinear', 'cluster', 'feature-like'] = 'linear',
         balance: bool = False,
         random_state: int = 42,
+        feature_vector: list | ArrayLike = None,
     ):
         """
         Generates labels for dataset X
@@ -467,8 +468,10 @@ class CategoricalClassification:
         :param class_relation: string, either 'linear', 'nonlinear', or 'cluster'
         :param balance: boolean, whether to balance clustering class labels
         :param random_state: seed for KMeans clustering, defaults to 42
+        :param feature_vector: feature vector to be used in generating the label
         :return: array of labels, corresponding to dataset X
         """
+
 
         if isinstance(p, (list, np.ndarray)):
             if sum(p) > 1: raise ValueError('sum of values in must be less than 1.0')
@@ -479,9 +482,13 @@ class CategoricalClassification:
 
         if decision_function is None:
             if class_relation == 'linear':
-                decision_function = lambda x: np.sum(2 * x + 3, axis=1)
+                decision_function = lambda x: np.sum(k * x + k, axis=1)
             elif class_relation == 'nonlinear':
                 decision_function = lambda x: np.sum(k * np.sin(x) + k * np.cos(x), axis=1)
+            elif class_relation == 'feature-like':
+                if feature_vector is None:
+                    raise ValueError('feature_vector cannot be None when class_relation is "feature-like"')
+                decision_function = None
             elif class_relation == 'cluster':
                 decision_function = None
         else:
@@ -490,7 +497,7 @@ class CategoricalClassification:
         y = []
         if decision_function is not None:
             if n > 2:
-                if type(p) != list:
+                if not isinstance(p, (list, np.ndarray)):
                     p = 1 / n
                     percentiles = [p * 100]
                     for i in range(1, n - 1):
@@ -525,11 +532,19 @@ class CategoricalClassification:
                 p_point = np.percentile(decision_boundary, p * 100)
                 y = np.where(decision_boundary > p_point, 1, 0)
         else:
-            if p == 0.5:
-                p = 1.0
+            if class_relation == 'cluster':
+                if p == 0.5:
+                    p = 1.0
+                else:
+                    p = [p, 1 - p]
+                y = self._cluster_data(X, n, p=p, balance=balance, random_state=random_state)
             else:
-                p = [p, 1 - p]
-            y = self._cluster_data(X, n, p=p, balance=balance, random_state=random_state)
+                feature_vector = np.array(feature_vector)
+                unique, counts = np.unique(feature_vector, return_counts=True)
+                n = np.arange(len(unique))
+                p = counts / len(feature_vector)
+
+                y = self._generate_feature(n_samples, vec=unique, p=p, ensure_rep=True)
 
         self.dataset_info.update({
             'labels': {

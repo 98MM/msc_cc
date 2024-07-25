@@ -152,6 +152,13 @@ def test_generate_labels_class_relation_nonlinear(cc_instance):
 
 def test_generate_labels_class_relation_cluster(cc_instance):
     X = cc_instance.generate_data(n_features=5, n_samples=100)
-    labels = cc_instance.generate_labels(X, class_relation='cluster', balance=True)
+    labels = cc_instance.generate_labels(X, class_relation='cluster')
+    assert isinstance(labels, np.ndarray), "Output should be a numpy array"
+    assert labels.shape == (100,), "Shape should be (n_samples,)"
+
+def test_generate_labels_class_relation_feature_like(cc_instance):
+    X = cc_instance.generate_data(n_features=5, n_samples=100)
+    vec = np.random.choice([0, 1, 2], size=100)
+    labels = cc_instance.generate_labels(X, class_relation='feature-like', feature_like=vec)
     assert isinstance(labels, np.ndarray), "Output should be a numpy array"
     assert labels.shape == (100,), "Shape should be (n_samples,)"
