@@ -7,7 +7,7 @@ This project is also hosted on [Outrank](https://github.com/outbrain/outrank).
 
 - Source code in src/generator.py
 - Demo in src/CC Demo.ipnyb
----
+
 # Usage
 ```bash
 pip install catclass
