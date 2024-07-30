@@ -3,7 +3,7 @@
 ### Creating a simple dataset
 ```python
 # Creates a simple dataset of 10 features, 10k samples, with feature cardinality of all features being 35
-X = cc.generate_data(9, 
+X = cc.generate_data(10, 
                      10000, 
                      cardinality=35, 
                      ensure_rep=True, 
