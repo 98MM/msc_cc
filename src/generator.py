@@ -377,6 +377,7 @@ class CategoricalClassification:
         :param r: (Pearson) correlation factor
         :return: X with generated correlated  features
         """
+        cardinality = self.dataset_info['general']['cardinality']
 
         if not isinstance(feature_indices, (list, np.ndarray)):
             feature_indices = np.array([feature_indices])
@@ -408,6 +409,7 @@ class CategoricalClassification:
 
             Y = np.dot(M_orthogonal, np.diag(1 / np.sqrt(np.sum(M_orthogonal ** 2, axis=0))))
             corr = Y[:, 1] + (1 / np.tan(theta)) * Y[:, 0]
+            corr = corr * cardinality
 
             correlated_features.append(corr)
 
